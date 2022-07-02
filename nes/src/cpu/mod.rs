@@ -1,5 +1,7 @@
 use anyhow::Result;
 
+use self::decode::DecodedOpcode;
+use crate::buscpu;
 use crate::Nes;
 
 #[derive(Default)]
@@ -52,12 +54,19 @@ pub fn clock(nes: &mut Nes) -> Result<()> {
     let opcode = read(nes, nes.cpu.pc)?;
     nes.cpu.pc = nes.cpu.pc.wrapping_add(1);
     // decode
-    let decoded = decode::decode(opcode);
-    nes.cpu.cycles = decoded.cycles;
+    let DecodedOpcode {
+        cycles,
+        bytes: _,
+        addr_mode,
+        instruction,
+        instruction_str: _,
+    } = decode::decode(opcode);
+    nes.cpu.cycles = cycles;
     // execute
-    nes.cpu.addr_mode = decoded.addr_mode as usize;
-    (decoded.addr_mode)(nes)?;
-    (decoded.instruction)(nes)?;
+    nes.cpu.addr_mode = addr_mode as usize;
+    (addr_mode)(nes)?;
+    (instruction)(nes)?;
+
     Ok(())
 }
 
@@ -124,14 +133,12 @@ pub fn nmi(nes: &mut Nes) -> Result<()> {
 
 // HELPER METHODS
 
-pub fn read(_nes: &mut Nes, _addr: u16) -> Result<u8> {
-    //buscpu::read(nes, addr)
-    Ok(0)
+pub fn read(nes: &mut Nes, addr: u16) -> Result<u8> {
+    buscpu::read(nes, addr)
 }
 
-pub fn write(_nes: &mut Nes, _addr: u16, _data: u8) -> Result<()> {
-    //buscpu::write(nes, addr, data);
-    Ok(())
+pub fn write(nes: &mut Nes, addr: u16, data: u8) -> Result<()> {
+    buscpu::write(nes, addr, data)
 }
 
 pub fn set_flag(nes: &mut Nes, flag: CpuFlag, val: bool) {
@@ -169,6 +176,46 @@ pub fn fetch_data(nes: &mut Nes) -> Result<()> {
         nes.cpu.data = read(nes, nes.cpu.addr)?;
     }
     Ok(())
+}
+
+#[cfg(test)]
+pub fn step(nes: &mut Nes) -> Result<String> {
+    let inst_pc = nes.cpu.pc;
+    let decoded = decode::decode(read(nes, inst_pc)?);
+
+    let (a, x, y, p, sp) = (nes.cpu.ac, nes.cpu.x, nes.cpu.y, nes.cpu.status, nes.cpu.sp);
+
+    clock(nes)?;
+    while nes.cpu.cycles > 0 {
+        clock(nes)?;
+    }
+
+    // Format instruction bytes
+    let mut inst_bytes = String::from("");
+    let mut bytes = [0u8; 3];
+    if decoded.bytes >= 1 {
+        bytes[0] = read(nes, inst_pc)?;
+        inst_bytes.push_str(&format!("{:02X}", bytes[0]));
+    }
+    if decoded.bytes >= 2 {
+        bytes[1] = read(nes, inst_pc.wrapping_add(1))?;
+        inst_bytes.push_str(&format!(" {:02X}", bytes[1]));
+    }
+    if decoded.bytes >= 3 {
+        bytes[2] = read(nes, inst_pc.wrapping_add(2))?;
+        inst_bytes.push_str(&format!(" {:02X}", bytes[2]));
+    }
+    while inst_bytes.len() < 8 {
+        inst_bytes.push_str(" ");
+    }
+
+    // Format registers and the rest
+    let mut asm_instruction = String::from(format!(
+        "{:04X}  {:?} \t{} \tA:{:02X} X:{:02X} Y:{:02X} P:{:02X} SP:{:02X}",
+        inst_pc, inst_bytes, decoded.instruction_str, a, x, y, p, sp
+    ));
+    asm_instruction = asm_instruction.replace("\"", "");
+    Ok(asm_instruction)
 }
 
 pub mod addressing;
