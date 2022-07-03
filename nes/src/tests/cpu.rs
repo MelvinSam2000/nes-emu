@@ -28,7 +28,7 @@ fn nes_test_log() -> Result<()> {
     nestest_log = nestest_log
         .iter()
         .map(|line| {
-            let line = line.replace("\t", " ");
+            let line = line.replace('\t', " ");
             re.replace_all(&line, " ").to_string()
         })
         .collect::<Vec<String>>();
@@ -40,7 +40,7 @@ fn nes_test_log() -> Result<()> {
 
     for i in 0..6350 {
         let inst = cpu::step(&mut nes)?;
-        let inst = inst.replace("\t", " ");
+        let inst = inst.replace('\t', " ");
         let inst = re.replace_all(&inst, " ").to_string();
         assert_eq!(inst, nestest_log[i], "Unequal at line {}", i + 1);
     }

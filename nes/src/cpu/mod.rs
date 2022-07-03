@@ -1,3 +1,6 @@
+use std::cmp::min;
+use std::fmt::Write as _;
+
 use anyhow::Result;
 
 use self::decode::DecodedOpcode;
@@ -178,7 +181,7 @@ pub fn fetch_data(nes: &mut Nes) -> Result<()> {
     Ok(())
 }
 
-#[cfg(test)]
+// For debugging
 pub fn step(nes: &mut Nes) -> Result<String> {
     let inst_pc = nes.cpu.pc;
     let decoded = decode::decode(read(nes, inst_pc)?);
@@ -193,28 +196,20 @@ pub fn step(nes: &mut Nes) -> Result<String> {
     // Format instruction bytes
     let mut inst_bytes = String::from("");
     let mut bytes = [0u8; 3];
-    if decoded.bytes >= 1 {
-        bytes[0] = read(nes, inst_pc)?;
-        inst_bytes.push_str(&format!("{:02X}", bytes[0]));
-    }
-    if decoded.bytes >= 2 {
-        bytes[1] = read(nes, inst_pc.wrapping_add(1))?;
-        inst_bytes.push_str(&format!(" {:02X}", bytes[1]));
-    }
-    if decoded.bytes >= 3 {
-        bytes[2] = read(nes, inst_pc.wrapping_add(2))?;
-        inst_bytes.push_str(&format!(" {:02X}", bytes[2]));
+    for i in 0..min(decoded.bytes, 3) as usize {
+        bytes[i] = read(nes, inst_pc.wrapping_add(i as u16))?;
+        let _ = write!(&mut inst_bytes, " {:02X}", bytes[i]);
     }
     while inst_bytes.len() < 8 {
-        inst_bytes.push_str(" ");
+        inst_bytes.push(' ');
     }
 
     // Format registers and the rest
-    let mut asm_instruction = String::from(format!(
+    let mut asm_instruction = format!(
         "{:04X}  {:?} \t{} \tA:{:02X} X:{:02X} Y:{:02X} P:{:02X} SP:{:02X}",
         inst_pc, inst_bytes, decoded.instruction_str, a, x, y, p, sp
-    ));
-    asm_instruction = asm_instruction.replace("\"", "");
+    );
+    asm_instruction = asm_instruction.replace('\"', "");
     Ok(asm_instruction)
 }
 

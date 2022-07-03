@@ -37,7 +37,6 @@ pub fn write(nes: &mut Nes, addr: u16, data: u8) -> Result<()> {
             nes.audio
                 .update_pulse(AudioChannel::Pulse1, Some(duty_cycle), Some(volume), None)?;
         }
-        0x4001 => {}
         0x4002 => {
             nes.apu.pulse1.set_period(data, false);
             let period = nes.apu.pulse1.period;
@@ -66,7 +65,6 @@ pub fn write(nes: &mut Nes, addr: u16, data: u8) -> Result<()> {
             nes.audio
                 .update_pulse(AudioChannel::Pulse2, Some(duty_cycle), Some(volume), None)?;
         }
-        0x4005 => {}
         0x4006 => {
             nes.apu.pulse2.set_period(data, false);
             let period = nes.apu.pulse2.period;
@@ -81,14 +79,12 @@ pub fn write(nes: &mut Nes, addr: u16, data: u8) -> Result<()> {
             nes.audio
                 .update_pulse(AudioChannel::Pulse2, None, None, Some(freq))?;
         }
-
         // TRIANGLE
         0x4008 => {
             let val = data & 0b11000000 != 0;
             nes.apu.triangle.muted = val;
             nes.audio.update_triangle(None, Some(val))?;
         }
-        0x4009 => {}
         0x400a => {
             nes.apu.triangle.set_period(data, false);
             let freq = nes.apu.triangle.get_frequency();
@@ -119,8 +115,11 @@ pub fn write(nes: &mut Nes, addr: u16, data: u8) -> Result<()> {
                     .enable_channel(AudioChannel::Triangle, !t_enabled)?;
             }
         }
+        0x4000..=0x401f => {
+            log::warn!("Writing address {:#x} of APU is ignored.", addr);
+        }
         _ => {
-            Err(anyhow!("Cannot read addr {:#x} from APU...", addr))?;
+            Err(anyhow!("Cannot write addr {:#x} of APU", addr))?;
         }
     };
     Ok(())

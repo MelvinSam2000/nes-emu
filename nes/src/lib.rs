@@ -1,4 +1,5 @@
 use anyhow::Result;
+use joypad::Button;
 
 use crate::apu::Apu;
 use crate::buscpu::BusCpu;
@@ -17,7 +18,8 @@ pub struct Nes {
     bus_cpu: BusCpu,
     bus_ppu: BusPpu,
     cartridge: Cartridge,
-    joypad: Joypad,
+    joypad1: Joypad,
+    joypad2: Joypad,
     screen: Box<dyn NesScreen>,
     audio: Box<dyn NesAudio>,
 }
@@ -31,7 +33,8 @@ impl Nes {
             bus_cpu: BusCpu::default(),
             bus_ppu: BusPpu::default(),
             cartridge: Cartridge::default(),
-            joypad: Joypad::default(),
+            joypad1: Joypad::default(),
+            joypad2: Joypad::default(),
             screen,
             audio,
         }
@@ -43,11 +46,40 @@ impl Nes {
 
     pub fn clock(&mut self) -> Result<()> {
         cpu::clock(self)?;
+        for _ in 0..3 {
+            ppu::clock(self)?;
+        }
         Ok(())
+    }
+
+    pub fn step(&mut self) -> Result<String> {
+        let inst = cpu::step(self)?;
+        for _ in 0..3 {
+            ppu::clock(self)?;
+        }
+        Ok(inst)
     }
 
     pub fn load(&mut self, rom_bytes: &[u8]) -> Result<()> {
         cartridge::load_cartridge(self, rom_bytes)
+    }
+
+    pub fn press_btn(&mut self, key: Button, one: bool) -> Result<()> {
+        if one {
+            self.joypad1.press(key);
+        } else {
+            self.joypad2.press(key);
+        }
+        Ok(())
+    }
+
+    pub fn release_btn(&mut self, key: Button, one: bool) -> Result<()> {
+        if one {
+            self.joypad1.release(key);
+        } else {
+            self.joypad2.release(key);
+        }
+        Ok(())
     }
 }
 

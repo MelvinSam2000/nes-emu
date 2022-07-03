@@ -79,6 +79,7 @@ pub fn load_cartridge(nes: &mut Nes, rom_bytes: &[u8]) -> Result<()> {
         66 => Rc::new(RefCell::new(Gxrom::default())),
         _ => Err(anyhow!("Mapper {} not supported yet...", mapper_id))?,
     };
+    log::info!("Loaded Mapper {}", mapper_id);
 
     // fill memories
     let mut offset = 16;
