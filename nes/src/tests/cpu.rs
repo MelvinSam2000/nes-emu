@@ -11,7 +11,7 @@ use crate::cpu;
 use crate::Nes;
 
 #[test]
-fn nes_test() -> Result<()> {
+fn nes_test_log() -> Result<()> {
     const NES_TEST_FILE: &str = "test-files/nestest.nes";
     const NES_TEST_LOG: &str = "test-files/nestest.log";
 
@@ -40,7 +40,7 @@ fn nes_test() -> Result<()> {
         let inst = cpu::step(&mut nes)?;
         let inst = inst.replace("\t", " ");
         let inst = re.replace_all(&inst, " ").to_string();
-        assert_eq!(inst, nestest_log[i], "Unequal at line {i}");
+        assert_eq!(inst, nestest_log[i], "Unequal at line {}", i + 1);
     }
 
     Ok(())

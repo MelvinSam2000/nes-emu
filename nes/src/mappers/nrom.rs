@@ -3,6 +3,7 @@ use anyhow::Result;
 use super::Mapper;
 use crate::Nes;
 
+// Mapper 0
 pub struct Nrom;
 
 impl Mapper for Nrom {

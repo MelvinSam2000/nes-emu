@@ -9,4 +9,7 @@ pub trait Mapper {
     fn write_chr(&mut self, nes: &mut Nes, addr: u16, data: u8) -> Result<()>;
 }
 
+pub mod cnrom;
+pub mod gxrom;
 pub mod nrom;
+pub mod uxrom;

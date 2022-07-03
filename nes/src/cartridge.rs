@@ -4,7 +4,10 @@ use std::rc::Rc;
 use anyhow::anyhow;
 use anyhow::Result;
 
+use crate::mappers::cnrom::Cnrom;
+use crate::mappers::gxrom::Gxrom;
 use crate::mappers::nrom::Nrom;
+use crate::mappers::uxrom::Uxrom;
 use crate::mappers::Mapper;
 use crate::Nes;
 
@@ -68,10 +71,14 @@ pub fn load_cartridge(nes: &mut Nes, rom_bytes: &[u8]) -> Result<()> {
 
     // choose mapper
     let mapper_id = (rom_bytes[0x7] & 0xf0) | ((rom_bytes[0x6] & 0xf0) >> 4);
-    nes.cartridge.mapper = Rc::new(RefCell::new(match mapper_id {
-        0 => Nrom,
+    nes.cartridge.mapper = match mapper_id {
+        0 => Rc::new(RefCell::new(Nrom)),
+        //1 => Mapper::MMC1(MMC1::new()),
+        2 => Rc::new(RefCell::new(Uxrom::default())),
+        3 => Rc::new(RefCell::new(Cnrom::default())),
+        66 => Rc::new(RefCell::new(Gxrom::default())),
         _ => Err(anyhow!("Mapper {} not supported yet...", mapper_id))?,
-    }));
+    };
 
     // fill memories
     let mut offset = 16;
