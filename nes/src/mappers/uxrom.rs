@@ -32,10 +32,7 @@ impl Mapper for Uxrom {
                 self.banksel = data & 0x0f;
                 Ok(())
             }
-            _ => Err(anyhow!(
-                "Cannot write at PRG address {:#x} for UXROM",
-                addr
-            )),
+            _ => Err(anyhow!("Cannot write at PRG address {:#x} for UXROM", addr)),
         }
     }
 

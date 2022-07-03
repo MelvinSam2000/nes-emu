@@ -1,17 +1,36 @@
 use anyhow::Result;
-use buscpu::BusCpu;
-use cartridge::Cartridge;
+use joypad::Joypad;
+use nesscreen::NesScreen;
 
+use crate::buscpu::BusCpu;
+use crate::busppu::BusPpu;
+use crate::cartridge::Cartridge;
 use crate::cpu::Cpu;
+use crate::ppu::Ppu;
 
-#[derive(Default)]
 pub struct Nes {
     cpu: Cpu,
+    ppu: Ppu,
     bus_cpu: BusCpu,
+    bus_ppu: BusPpu,
     cartridge: Cartridge,
+    joypad: Joypad,
+    screen: Box<dyn NesScreen>,
 }
 
 impl Nes {
+    pub fn new(screen: Box<dyn NesScreen>) -> Self {
+        Self {
+            cpu: Cpu::default(),
+            ppu: Ppu::default(),
+            bus_cpu: BusCpu::default(),
+            bus_ppu: BusPpu::default(),
+            cartridge: Cartridge::default(),
+            joypad: Joypad::default(),
+            screen,
+        }
+    }
+
     pub fn reset(&mut self) -> Result<()> {
         cpu::reset(self)
     }
@@ -27,9 +46,13 @@ impl Nes {
 }
 
 pub mod buscpu;
+pub mod busppu;
 pub mod cartridge;
 pub mod cpu;
+pub mod joypad;
 pub mod mappers;
+pub mod nesscreen;
+pub mod ppu;
 
 #[cfg(test)]
 mod tests {

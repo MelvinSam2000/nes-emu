@@ -30,10 +30,7 @@ impl Mapper for Cnrom {
                 self.banksel = (data & 0x03) as u8;
                 Ok(())
             }
-            _ => Err(anyhow!(
-                "Cannot write at PRG address {:#x} for CNROM",
-                addr
-            )),
+            _ => Err(anyhow!("Cannot write at PRG address {:#x} for CNROM", addr)),
         }
     }
 

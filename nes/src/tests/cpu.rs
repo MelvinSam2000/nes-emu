@@ -8,6 +8,7 @@ use anyhow::Result;
 use regex::Regex;
 
 use crate::cpu;
+use crate::nesscreen::NoScreen;
 use crate::Nes;
 
 #[test]
@@ -15,7 +16,7 @@ fn nes_test_log() -> Result<()> {
     const NES_TEST_FILE: &str = "test-files/nestest.nes";
     const NES_TEST_LOG: &str = "test-files/nestest.log";
 
-    let mut nes = Nes::default();
+    let mut nes = Nes::new(Box::new(NoScreen));
 
     let nestest_rom = fs::read(NES_TEST_FILE)?;
     let mut nestest_log = BufReader::new(File::open(NES_TEST_LOG)?)
