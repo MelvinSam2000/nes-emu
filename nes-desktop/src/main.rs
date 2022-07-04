@@ -4,7 +4,6 @@ use std::rc::Rc;
 
 use anyhow::Context;
 use anyhow::Result;
-use minifb::Key;
 use minifb::Window;
 use minifb::WindowOptions;
 
@@ -27,14 +26,15 @@ fn main() -> Result<()> {
     let mut nes = Nes::new(window.clone());
 
     let nes_rom_path = std::env::args().collect::<Vec<String>>();
-    let nes_rom_path = nes_rom_path.get(1)
+    let nes_rom_path = nes_rom_path
+        .get(1)
         .context("Cannot get file from CLI arguments")?;
     let game_rom = fs::read(&nes_rom_path)?;
     nes.load(&game_rom)?;
 
     log::info!("Loaded game {:?}", &nes_rom_path);
 
-    while window.borrow().is_open() && !window.borrow().is_key_down(Key::Escape) {
+    while window.borrow().is_open() {
         nes.poll_key_press()?;
         if let Err(err) = nes.clock() {
             log::error!("Game crahed due to err: {}", err);
@@ -44,5 +44,6 @@ fn main() -> Result<()> {
     Ok(())
 }
 
+pub mod audio;
 pub mod nes;
 pub mod screen;

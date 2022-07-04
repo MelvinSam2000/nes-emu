@@ -1,22 +1,30 @@
 use std::cell::RefCell;
 use std::rc::Rc;
+use std::time::Duration;
 
-use nes::joypad::Button;
-use ::nes::nesaudio::NoAudio;
 use anyhow::Result;
-use minifb::{Window, Key};
+use minifb::Key;
+use minifb::Window;
+use nes::joypad::Button;
 
+use crate::audio::NesAudio;
 use crate::screen::NesScreen;
 
 pub struct Nes {
     nes: ::nes::Nes,
-    window: Rc<RefCell<Window>>
+    window: Rc<RefCell<Window>>,
 }
 
 impl Nes {
     pub fn new(window: Rc<RefCell<Window>>) -> Self {
+        window
+            .borrow_mut()
+            .limit_update_rate(Some(Duration::from_micros(16600)));
         Self {
-            nes: ::nes::Nes::new(Box::new(NesScreen::new(window.clone())), Box::new(NoAudio)),
+            nes: ::nes::Nes::new(
+                Box::new(NesScreen::new(window.clone())),
+                Box::new(NesAudio::default()),
+            ),
             window,
         }
     }
@@ -37,7 +45,7 @@ impl Nes {
         Ok(())
     }
 
-    pub fn poll_key_press(&mut self) -> Result<()>  {
+    pub fn poll_key_press(&mut self) -> Result<()> {
         let window = self.window.try_borrow();
         if let Ok(window) = window {
             if window.is_key_down(Key::Up) {

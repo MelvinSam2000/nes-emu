@@ -4,7 +4,6 @@ version = "0.1.0"
 edition = "2021"
 
 [profile.release]
-opt-level = "s"
 strip = "symbols"
 panic = "abort"
 lto = true
@@ -16,3 +15,4 @@ env_logger = "0.9.0"
 log = { version = "0.4.17", features = ["release_max_level_error"] }
 minifb = "0.23.0"
 nes = { path = "../nes" }
+web-audio-api = "0.20.0"

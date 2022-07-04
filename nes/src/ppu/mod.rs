@@ -195,7 +195,9 @@ pub fn read_ppu_reg(nes: &mut Nes, addr: u16) -> Result<u8> {
 
 pub fn write_ppu_reg(nes: &mut Nes, addr: u16, data: u8) -> Result<()> {
     match addr {
-        PPUSTATUS => Err(anyhow!("PPUSTATUS register is read only!"))?,
+        PPUSTATUS => {
+            log::warn!("PPUSTATUS register is read only!");
+        }
         PPUCTRL => {
             nes.ppu.reg_control.update(data);
         }
@@ -302,8 +304,8 @@ pub fn render_background(nes: &mut Nes) -> Result<()> {
 pub fn render_sprites(nes: &mut Nes) -> Result<()> {
     for i in (0..256).step_by(4).rev() {
         let tile_id = nes.ppu.oam[i + 1] as u16;
-        let tile_x = nes.ppu.oam[i + 3];
-        let tile_y = nes.ppu.oam[i];
+        let tile_x  = nes.ppu.oam[i + 3];
+        let tile_y  = nes.ppu.oam[i + 0];
         let tile_attr = nes.ppu.oam[i + 2];
 
         let flip_v = tile_attr >> 7 & 1 == 1;
@@ -321,10 +323,8 @@ pub fn render_sprites(nes: &mut Nes) -> Result<()> {
                 if value == 0 {
                     continue;
                 }
-
-                let pal_pixel_id = 0x11 + palette_id * 4 + value - 1;
-
-                //let rgb = (0, 0, (((value as u16)*101) % 255) as u8);
+                
+                let pal_pixel_id = 0x11 + palette_id*4 + value - 1;
                 let rgb = PALETTE_TO_RGB[(read(nes, 0x3f00 + pal_pixel_id as u16)? % 64) as usize];
 
                 let (pixel_x, pixel_y) = match (flip_h, flip_v) {
@@ -333,35 +333,9 @@ pub fn render_sprites(nes: &mut Nes) -> Result<()> {
                     (false, true) => (tile_x.wrapping_add(x), tile_y.wrapping_add(7 - y as u8)),
                     (true, true) => (tile_x.wrapping_add(7 - x), tile_y.wrapping_add(7 - y as u8)),
                 };
+
                 if pixel_y < 240 {
                     nes.screen.draw_pixel(pixel_x, pixel_y, rgb)?;
-                }
-            }
-        }
-    }
-    Ok(())
-}
-
-// TESTING FUNCTIONS
-
-pub fn draw_chr(nes: &mut Nes, bank: u16) -> Result<()> {
-    for tile_x in 0..16 {
-        for tile_y in 0..16 {
-            let offset = tile_x * 256 + tile_y * 16;
-            for row in 0..8 {
-                let mut tile_lsb = read(nes, bank * 0x1000 + offset + row)?;
-                let mut tile_msb = read(nes, bank * 0x1000 + offset + row + 8)?;
-                for col in 0..8 {
-                    let pixel = (tile_msb & 0x01) + (tile_lsb & 0x01);
-                    tile_lsb >>= 1;
-                    tile_msb >>= 1;
-
-                    let rgb = PALETTE_TO_RGB[(read(nes, 0x3f00 + pixel as u16)? % 64) as usize];
-                    nes.screen.draw_pixel(
-                        (tile_y * 8 + (7 - col)) as u8,
-                        (tile_x * 8 + row) as u8,
-                        rgb,
-                    )?;
                 }
             }
         }

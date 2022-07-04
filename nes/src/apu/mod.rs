@@ -115,7 +115,7 @@ pub fn write(nes: &mut Nes, addr: u16, data: u8) -> Result<()> {
                     .enable_channel(AudioChannel::Triangle, !t_enabled)?;
             }
         }
-        0x4000..=0x401f => {
+        0x4001 | 0x4005 | 0x4009 | 0x400a..=0x401f => {
             log::warn!("Writing address {:#x} of APU is ignored.", addr);
         }
         _ => {
