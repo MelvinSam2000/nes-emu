@@ -8,25 +8,38 @@ use minifb::Window;
 use nes::joypad::Button;
 
 use crate::audio::NesAudio;
+use crate::dbg::ChrScreen;
+use crate::dbg::PaletteScreen;
 use crate::screen::NesScreen;
 
 pub struct Nes {
     nes: ::nes::Nes,
     window: Rc<RefCell<Window>>,
+    dbg_chr: [ChrScreen; 2],
+    dbg_palette: PaletteScreen,
+    clock: u16,
 }
 
 impl Nes {
-    pub fn new(window: Rc<RefCell<Window>>) -> Self {
+    pub fn new(window: Rc<RefCell<Window>>) -> Result<Self> {
+        window.borrow_mut().set_position(20, 20);
         window
             .borrow_mut()
             .limit_update_rate(Some(Duration::from_micros(16600)));
-        Self {
+
+        let dbg_chr = [ChrScreen::new(true)?, ChrScreen::new(false)?];
+        let dbg_palette = PaletteScreen::new()?;
+
+        Ok(Self {
             nes: ::nes::Nes::new(
                 Box::new(NesScreen::new(window.clone())),
                 Box::new(NesAudio::default()),
             ),
             window,
-        }
+            dbg_chr,
+            dbg_palette,
+            clock: 0,
+        })
     }
 
     pub fn clock(&mut self) -> Result<()> {
@@ -36,6 +49,17 @@ impl Nes {
     pub fn step(&mut self) -> Result<()> {
         let inst = self.nes.step()?;
         log::info!("{inst}");
+        Ok(())
+    }
+
+    pub fn clock_dbg(&mut self) -> Result<()> {
+        self.nes.clock()?;
+        self.clock = self.clock.wrapping_add(1);
+        if self.clock == 0 {
+            ::nes::ppu::draw_chr(&mut self.nes, 0, &mut self.dbg_chr[0])?;
+            ::nes::ppu::draw_chr(&mut self.nes, 1, &mut self.dbg_chr[1])?;
+            ::nes::ppu::draw_palette(&mut self.nes, &mut self.dbg_palette)?;
+        }
         Ok(())
     }
 

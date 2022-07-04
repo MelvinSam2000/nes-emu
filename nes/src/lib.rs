@@ -18,8 +18,7 @@ pub struct Nes {
     bus_cpu: BusCpu,
     bus_ppu: BusPpu,
     cartridge: Cartridge,
-    joypad1: Joypad,
-    joypad2: Joypad,
+    joypad: (Joypad, Joypad),
     screen: Box<dyn NesScreen>,
     audio: Box<dyn NesAudio>,
 }
@@ -33,8 +32,7 @@ impl Nes {
             bus_cpu: BusCpu::default(),
             bus_ppu: BusPpu::default(),
             cartridge: Cartridge::default(),
-            joypad1: Joypad::default(),
-            joypad2: Joypad::default(),
+            joypad: (Joypad::default(), Joypad::default()),
             screen,
             audio,
         }
@@ -66,18 +64,18 @@ impl Nes {
 
     pub fn press_btn(&mut self, key: Button, one: bool) -> Result<()> {
         if one {
-            self.joypad1.press(key);
+            self.joypad.0.press(key);
         } else {
-            self.joypad2.press(key);
+            self.joypad.1.press(key);
         }
         Ok(())
     }
 
     pub fn release_btn(&mut self, key: Button, one: bool) -> Result<()> {
         if one {
-            self.joypad1.release(key);
+            self.joypad.0.release(key);
         } else {
-            self.joypad2.release(key);
+            self.joypad.1.release(key);
         }
         Ok(())
     }

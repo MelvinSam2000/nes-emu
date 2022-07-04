@@ -38,11 +38,11 @@ fn nes_test_log() -> Result<()> {
     nes.cpu.pc = 0xc000;
     cpu::step(&mut nes)?;
 
-    for i in 0..6350 {
+    for (i, log_line) in nestest_log.iter().enumerate() {
         let inst = cpu::step(&mut nes)?;
         let inst = inst.replace('\t', " ");
         let inst = re.replace_all(&inst, " ").to_string();
-        assert_eq!(inst, nestest_log[i], "Unequal at line {}", i + 1);
+        assert_eq!(&inst, log_line, "Unequal at line {}", i + 1);
     }
 
     Ok(())

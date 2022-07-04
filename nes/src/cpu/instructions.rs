@@ -547,9 +547,17 @@ pub fn dop(nes: &mut Nes) -> Result<()> {
 
 pub fn isb(nes: &mut Nes) -> Result<()> {
     cpu::fetch_data(nes)?;
-    let tmp = nes.cpu.data.wrapping_add(1);
+    let mut tmp = nes.cpu.data.wrapping_add(1);
     cpu::write(nes, nes.cpu.addr, tmp)?;
-    nes.cpu.ac = nes.cpu.ac.wrapping_sub(tmp);
+    tmp ^= 0xff;
+    let res = nes.cpu.ac as u16 + tmp as u16 + cpu::get_flag(nes, CpuFlag::C) as u16;
+    cpu::set_flag(nes, CpuFlag::C, res > 0xff);
+    cpu::set_flag(
+        nes,
+        CpuFlag::V,
+        nes.cpu.ac & 0x80 == tmp & 0x80 && tmp & 0x80 != res as u8 & 0x80,
+    );
+    nes.cpu.ac = res as u8;
     cpu::set_flag(nes, CpuFlag::Z, nes.cpu.ac == 0);
     cpu::set_flag(nes, CpuFlag::N, nes.cpu.ac & 0x0080 != 0);
     Ok(())
@@ -588,22 +596,17 @@ pub fn rla(nes: &mut Nes) -> Result<()> {
 
 pub fn rra(nes: &mut Nes) -> Result<()> {
     cpu::fetch_data(nes)?;
-    let mut tmp = (nes.cpu.data as u16) >> 1;
-    if cpu::get_flag(nes, CpuFlag::C) {
-        tmp |= 0x0080;
-    }
-
-    cpu::set_flag(nes, CpuFlag::C, nes.cpu.data & 0x0001 != 0);
-
-    if nes.cpu.addr_mode == addressing::imp as usize {
-        nes.cpu.ac = tmp as u8;
-    } else {
-        cpu::write(nes, nes.cpu.addr, tmp as u8)?;
-    }
-
-    // ADD
-    nes.cpu.ac |= tmp as u8;
-
+    let carry = nes.cpu.data & 0x01;
+    let result = (nes.cpu.data >> 1) | (cpu::get_flag(nes, CpuFlag::C) as u8) << 7;
+    cpu::write(nes, nes.cpu.addr, result)?;
+    let add_res = nes.cpu.ac as u16 + result as u16 + carry as u16;
+    cpu::set_flag(nes, CpuFlag::C, add_res > 0xff);
+    cpu::set_flag(
+        nes,
+        CpuFlag::V,
+        nes.cpu.ac & 0x80 == result & 0x80 && result & 0x80 != add_res as u8 & 0x80,
+    );
+    nes.cpu.ac = add_res as u8;
     cpu::set_flag(nes, CpuFlag::Z, nes.cpu.ac == 0);
     cpu::set_flag(nes, CpuFlag::N, nes.cpu.ac & 0x0080 != 0);
     Ok(())

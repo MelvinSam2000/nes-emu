@@ -20,8 +20,8 @@ pub fn read(nes: &mut Nes, addr: u16) -> Result<u8> {
     match addr {
         0x0000..=0x1fff => Ok(nes.bus_cpu.ram[addr as usize & 0x07ff]),
         0x2000..=0x3fff => ppu::read_ppu_reg(nes, addr & 0x2007),
-        0x4016 => Ok(nes.joypad1.read()),
-        0x4017 => Ok(nes.joypad2.read()),
+        0x4016 => Ok(nes.joypad.0.read()),
+        0x4017 => Ok(nes.joypad.1.read()),
         0x4000..=0x4013 | 0x4015 => apu::read(nes, addr),
         0x4020..=0xffff => cartridge::prg_read(nes, addr),
         _ => Err(anyhow!("Invalid read on cpu bus at address {:x}", addr)),
@@ -41,10 +41,10 @@ pub fn write(nes: &mut Nes, addr: u16, data: u8) -> Result<()> {
             ppu::write_ppu_reg(nes, 0x4014, data)?;
         }
         0x4016 => {
-            nes.joypad1.write(data);
+            nes.joypad.0.write(data);
         }
         0x4017 => {
-            nes.joypad2.write(data);
+            nes.joypad.1.write(data);
         }
         0x4000..=0x4013 | 0x4015 => {
             apu::write(nes, addr, data)?;
