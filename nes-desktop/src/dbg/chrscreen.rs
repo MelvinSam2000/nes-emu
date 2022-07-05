@@ -6,7 +6,7 @@ const CHR_WIDTH: usize = 128;
 const CHR_HEIGHT: usize = 128;
 
 pub struct ChrScreen {
-    buffer: [u32; CHR_WIDTH * CHR_HEIGHT],
+    buffer: Box<[u32; CHR_WIDTH * CHR_HEIGHT]>,
     window: Window,
     i: usize,
 }
@@ -23,7 +23,7 @@ impl ChrScreen {
             25 + 256 * 2,
         );
         Ok(Self {
-            buffer: [0u32; CHR_WIDTH * CHR_HEIGHT],
+            buffer: Box::new([0u32; CHR_WIDTH * CHR_HEIGHT]),
             window,
             i: 0,
         })
@@ -39,7 +39,7 @@ impl ::nes::nesscreen::NesScreen for ChrScreen {
             ((rgb.0 as u32) << 16) | ((rgb.1 as u32) << 8) | rgb.2 as u32;
         if self.i == CHR_WIDTH * CHR_HEIGHT {
             self.window
-                .update_with_buffer(&self.buffer, CHR_WIDTH, CHR_HEIGHT)?;
+                .update_with_buffer(self.buffer.as_ref(), CHR_WIDTH, CHR_HEIGHT)?;
             self.i = 0;
         }
         self.i += 1;

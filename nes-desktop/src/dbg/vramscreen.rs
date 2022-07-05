@@ -6,7 +6,7 @@ const VRAM_WIDTH: usize = 256;
 const VRAM_HEIGHT: usize = 240;
 
 pub struct VramScreen {
-    buffer: [u32; VRAM_WIDTH * VRAM_HEIGHT],
+    buffer: Box<[u32; VRAM_WIDTH * VRAM_HEIGHT]>,
     window: Window,
     i: usize,
 }
@@ -48,7 +48,7 @@ impl VramScreen {
             }
         }
         Ok(Self {
-            buffer: [0u32; VRAM_WIDTH * VRAM_HEIGHT],
+            buffer: Box::new([0u32; VRAM_WIDTH * VRAM_HEIGHT]),
             window,
             i: 0,
         })
@@ -64,7 +64,7 @@ impl ::nes::nesscreen::NesScreen for VramScreen {
             ((rgb.0 as u32) << 16) | ((rgb.1 as u32) << 8) | rgb.2 as u32;
         if self.i == VRAM_WIDTH * VRAM_HEIGHT {
             self.window
-                .update_with_buffer(&self.buffer, VRAM_WIDTH, VRAM_HEIGHT)?;
+                .update_with_buffer(self.buffer.as_ref(), VRAM_WIDTH, VRAM_HEIGHT)?;
             self.i = 0;
         }
         self.i += 1;

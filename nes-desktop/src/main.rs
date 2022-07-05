@@ -28,6 +28,7 @@ fn main() -> Result<()> {
         win_options,
     )?));
 
+
     log::info!("Starting NES Emulator...");
     let mut nes = Nes::new(window)?;
 
