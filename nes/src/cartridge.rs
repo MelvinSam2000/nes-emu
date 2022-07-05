@@ -20,6 +20,7 @@ pub struct Cartridge {
     pub mirroring: Mirroring,
 }
 
+#[derive(Debug)]
 pub enum Mirroring {
     HORIZONTAL,
     VERTICAL,
@@ -59,6 +60,7 @@ pub fn load_cartridge(nes: &mut Nes, rom_bytes: &[u8]) -> Result<()> {
     } else {
         Mirroring::VERTICAL
     };
+    log::info!("Mirroring: {:?}", nes.cartridge.mirroring);
 
     // resize cartridge roms
     nes.cartridge.prg_banks = prg_banks as u8;

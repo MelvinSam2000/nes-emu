@@ -1,13 +1,15 @@
 use anyhow::anyhow;
 use anyhow::Result;
 
-use crate::busppu;
+use crate::buscpu;
+use crate::busppu::read;
+use crate::busppu::write;
 use crate::cpu;
 use crate::nesscreen::NesScreen;
-use crate::ppu::regcontrol::RegControl;
-use crate::ppu::regmask::RegMask;
-use crate::ppu::regscroll::RegScroll;
-use crate::ppu::regstatus::RegStatus;
+use crate::ppu::regs::RegControl;
+use crate::ppu::regs::RegMask;
+use crate::ppu::regs::RegScroll;
+use crate::ppu::regs::RegStatus;
 use crate::Nes;
 
 pub struct Ppu {
@@ -131,6 +133,7 @@ pub fn clock(nes: &mut Nes) -> Result<()> {
         nes.ppu.reg_status.set_vblank(true);
         render_background(nes)?;
         render_sprites(nes)?;
+        nes.screen.vblank()?;
         if nes.ppu.reg_control.is_nmi_enabled() {
             cpu::nmi(nes)?;
         }
@@ -145,14 +148,6 @@ pub fn clock(nes: &mut Nes) -> Result<()> {
         }
     }
     Ok(())
-}
-
-pub fn read(nes: &mut Nes, addr: u16) -> Result<u8> {
-    busppu::read(nes, addr)
-}
-
-pub fn write(nes: &mut Nes, addr: u16, data: u8) -> Result<()> {
-    busppu::write(nes, addr, data)
 }
 
 pub fn read_ppu_reg(nes: &mut Nes, addr: u16) -> Result<u8> {
@@ -243,7 +238,7 @@ pub fn write_ppu_reg(nes: &mut Nes, addr: u16, data: u8) -> Result<()> {
             let page: u16 = (data as u16) << 8;
             nes.cpu.cycles = 0xff;
             for i in 0..256 {
-                nes.ppu.oam[nes.ppu.reg_oam_addr as usize] = cpu::read(nes, page + i)?;
+                nes.ppu.oam[nes.ppu.reg_oam_addr as usize] = buscpu::read(nes, page + i)?;
                 nes.ppu.reg_oam_addr = nes.ppu.reg_oam_addr.wrapping_add(1);
             }
         }
@@ -283,13 +278,11 @@ pub fn render_background(nes: &mut Nes) -> Result<()> {
                 let pixel = ((tile_msb & 0x01) << 1) | (tile_lsb & 0x01);
                 tile_lsb >>= 1;
                 tile_msb >>= 1;
-
                 let palette_idx = match pixel {
                     0 => read(nes, 0x3f00)?,
                     1 | 2 | 3 => read(nes, 0x3f00 + palette_start as u16 + pixel as u16)?,
                     _ => 0,
                 };
-
                 let rgb = PALETTE_TO_RGB[palette_idx as usize];
                 nes.screen.draw_pixel(
                     (tile_col * 8 + (7 - col)) as u8,
@@ -369,6 +362,60 @@ pub fn draw_chr(nes: &mut Nes, bank: u16, dbg_screen: &mut impl NesScreen) -> Re
     Ok(())
 }
 
+pub fn draw_vram(nes: &mut Nes, screen_no: usize, dbg_screen: &mut impl NesScreen) -> Result<()> {
+    let (nt_start, attr_start) = match screen_no {
+        0 => (0x2000, 0x23c0),
+        1 => (0x2400, 0x27c0),
+        2 => (0x2800, 0x2bc0),
+        3 => (0x2c00, 0x2fc0),
+        _ => Err(anyhow!("Invalid screen number..."))?
+    };
+
+    let chr_bank = nes.ppu.reg_control.get_bg() as u16;
+    // First nametable
+    for i in nt_start..attr_start {
+        // get tile ID from vram
+        let tile = read(nes, i)?;
+        let tile_col = (i - nt_start) % 32;
+        let tile_row = (i - nt_start) / 32;
+
+        let attr_table_idx = tile_row / 4 * 8 + tile_col / 4;
+        let attr_byte = read(nes, attr_start + attr_table_idx)?;
+
+        let palette_idx = match (tile_col % 4 / 2, tile_row % 4 / 2) {
+            (0, 0) => attr_byte & 0b11,
+            (1, 0) => (attr_byte >> 2) & 0b11,
+            (0, 1) => (attr_byte >> 4) & 0b11,
+            (1, 1) => (attr_byte >> 6) & 0b11,
+            (_, _) => 0,
+        };
+        let palette_start = 4 * palette_idx;
+
+        // Draw tile
+        for row in 0..8 {
+            let mut tile_lsb = read(nes, chr_bank * 0x1000 + (tile as u16) * 16 + row)?;
+            let mut tile_msb = read(nes, chr_bank * 0x1000 + (tile as u16) * 16 + row + 8)?;
+            for col in 0..8 {
+                let pixel = ((tile_msb & 0x01) << 1) | (tile_lsb & 0x01);
+                tile_lsb >>= 1;
+                tile_msb >>= 1;
+                let palette_idx = match pixel {
+                    0 => read(nes, 0x3f00)?,
+                    1 | 2 | 3 => read(nes, 0x3f00 + palette_start as u16 + pixel as u16)?,
+                    _ => 0,
+                };
+                let rgb = PALETTE_TO_RGB[palette_idx as usize];
+                dbg_screen.draw_pixel(
+                    (tile_col * 8 + (7 - col)) as u8,
+                    (tile_row * 8 + row) as u8,
+                    rgb,
+                )?;
+            }
+        }
+    }
+    Ok(())
+}
+
 pub fn draw_palette(nes: &mut Nes, dbg_screen: &mut impl NesScreen) -> Result<()> {
     for i in 0..32 {
         dbg_screen.draw_pixel(
@@ -380,7 +427,4 @@ pub fn draw_palette(nes: &mut Nes, dbg_screen: &mut impl NesScreen) -> Result<()
     Ok(())
 }
 
-pub mod regcontrol;
-pub mod regmask;
-pub mod regscroll;
-pub mod regstatus;
+pub mod regs;

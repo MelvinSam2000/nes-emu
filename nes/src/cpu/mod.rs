@@ -4,7 +4,8 @@ use std::fmt::Write as _;
 use anyhow::Result;
 
 use self::decode::DecodedOpcode;
-use crate::buscpu;
+use crate::buscpu::read;
+use crate::buscpu::write;
 use crate::Nes;
 
 #[derive(Default)]
@@ -135,14 +136,6 @@ pub fn nmi(nes: &mut Nes) -> Result<()> {
 }
 
 // HELPER METHODS
-
-pub fn read(nes: &mut Nes, addr: u16) -> Result<u8> {
-    buscpu::read(nes, addr)
-}
-
-pub fn write(nes: &mut Nes, addr: u16, data: u8) -> Result<()> {
-    buscpu::write(nes, addr, data)
-}
 
 pub fn set_flag(nes: &mut Nes, flag: CpuFlag, val: bool) {
     if val {
