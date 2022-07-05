@@ -29,7 +29,7 @@ fn main() -> Result<()> {
     )?));
 
     log::info!("Starting NES Emulator...");
-    let mut nes = Nes::new(window.clone())?;
+    let mut nes = Nes::new(window)?;
 
     let nes_rom_path = std::env::args().collect::<Vec<String>>();
     let nes_rom_path = nes_rom_path
@@ -37,10 +37,9 @@ fn main() -> Result<()> {
         .context("Cannot get file from CLI arguments")?;
     let game_rom = fs::read(&nes_rom_path)?;
     nes.load(&game_rom)?;
-
     log::info!("Loaded game {:?}", &nes_rom_path);
 
-    while window.borrow().is_open() {
+    loop {
         nes.poll_key_press()?;
         if let Err(err) = nes.clock_dbg() {
             log::error!("Game crahed due to err: {}", err);

@@ -1,6 +1,5 @@
 use std::cell::RefCell;
 use std::rc::Rc;
-use std::time::Duration;
 
 use anyhow::Result;
 use minifb::Key;
@@ -8,26 +7,32 @@ use minifb::Window;
 use nes::joypad::Button;
 
 use crate::audio::NesAudio;
-use crate::dbg::ChrScreen;
-use crate::dbg::PaletteScreen;
+use crate::dbg::chrscreen::ChrScreen;
+use crate::dbg::palettescreen::PaletteScreen;
+use crate::dbg::vramscreen::Corner;
+use crate::dbg::vramscreen::VramScreen;
 use crate::screen::NesScreen;
 
 pub struct Nes {
     nes: ::nes::Nes,
     window: Rc<RefCell<Window>>,
     dbg_chr: [ChrScreen; 2],
+    dbg_vram: [VramScreen; 4],
     dbg_palette: PaletteScreen,
     clock: u16,
 }
 
 impl Nes {
     pub fn new(window: Rc<RefCell<Window>>) -> Result<Self> {
-        window.borrow_mut().set_position(20, 20);
-        window
-            .borrow_mut()
-            .limit_update_rate(Some(Duration::from_micros(16600)));
+        window.try_borrow_mut()?.set_position(20, 20);
 
         let dbg_chr = [ChrScreen::new(true)?, ChrScreen::new(false)?];
+        let dbg_vram = [
+            VramScreen::new(Corner::TopLeft)?,
+            VramScreen::new(Corner::TopRight)?,
+            VramScreen::new(Corner::BottomLeft)?,
+            VramScreen::new(Corner::BottomRight)?,
+        ];
         let dbg_palette = PaletteScreen::new()?;
 
         Ok(Self {
@@ -37,6 +42,7 @@ impl Nes {
             ),
             window,
             dbg_chr,
+            dbg_vram,
             dbg_palette,
             clock: 0,
         })
@@ -58,6 +64,10 @@ impl Nes {
         if self.clock == 0 {
             ::nes::ppu::draw_chr(&mut self.nes, 0, &mut self.dbg_chr[0])?;
             ::nes::ppu::draw_chr(&mut self.nes, 1, &mut self.dbg_chr[1])?;
+            ::nes::ppu::draw_vram(&mut self.nes, 0, &mut self.dbg_vram[0])?;
+            ::nes::ppu::draw_vram(&mut self.nes, 1, &mut self.dbg_vram[1])?;
+            ::nes::ppu::draw_vram(&mut self.nes, 2, &mut self.dbg_vram[2])?;
+            ::nes::ppu::draw_vram(&mut self.nes, 3, &mut self.dbg_vram[3])?;
             ::nes::ppu::draw_palette(&mut self.nes, &mut self.dbg_palette)?;
         }
         Ok(())
