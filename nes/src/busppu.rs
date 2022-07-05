@@ -19,7 +19,7 @@ impl Default for BusPpu {
     }
 }
 
-pub fn read(nes: &mut Nes, addr: u16) -> Result<u8> {
+pub fn read<S, A>(nes: &mut Nes<S, A>, addr: u16) -> Result<u8> {
     match addr {
         0x0000..=0x1fff => cartridge::chr_read(nes, addr),
         0x2000..=0x2fff => {
@@ -38,7 +38,7 @@ pub fn read(nes: &mut Nes, addr: u16) -> Result<u8> {
     }
 }
 
-pub fn write(nes: &mut Nes, addr: u16, data: u8) -> Result<()> {
+pub fn write<S, A>(nes: &mut Nes<S, A>, addr: u16, data: u8) -> Result<()> {
     match addr {
         0x0000..=0x1fff => {
             cartridge::chr_write(nes, addr, data)?;
@@ -62,7 +62,7 @@ pub fn write(nes: &mut Nes, addr: u16, data: u8) -> Result<()> {
     Ok(())
 }
 
-pub fn mirror_vram_addr(nes: &mut Nes, addr: u16) -> u16 {
+pub fn mirror_vram_addr<S, A>(nes: &mut Nes<S, A>, addr: u16) -> u16 {
     let mut mapped_addr = addr & 0x0fff;
     match &nes.cartridge.mirroring {
         Mirroring::HORIZONTAL => {

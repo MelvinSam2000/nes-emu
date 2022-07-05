@@ -11,20 +11,24 @@ use crate::nesaudio::NesAudio;
 use crate::nesscreen::NesScreen;
 use crate::ppu::Ppu;
 
-pub struct Nes {
+pub struct Nes<S, A> {
     cpu: Cpu,
     ppu: Ppu,
     apu: Apu,
     bus_cpu: BusCpu,
     bus_ppu: BusPpu,
-    cartridge: Cartridge,
+    cartridge: Cartridge<S, A>,
     joypad: (Joypad, Joypad),
-    screen: Box<dyn NesScreen>,
-    audio: Box<dyn NesAudio>,
+    screen: S,
+    audio: A,
 }
 
-impl Nes {
-    pub fn new(screen: Box<dyn NesScreen>, audio: Box<dyn NesAudio>) -> Self {
+impl<S, A> Nes<S, A>
+where
+    S: NesScreen,
+    A: NesAudio,
+{
+    pub fn new(screen: S, audio: A) -> Self {
         Self {
             cpu: Cpu::default(),
             ppu: Ppu::default(),

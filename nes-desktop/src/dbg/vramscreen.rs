@@ -27,7 +27,7 @@ pub enum Corner {
     TopLeft,
     TopRight,
     BottomLeft,
-    BottomRight
+    BottomRight,
 }
 
 impl VramScreen {
@@ -36,16 +36,16 @@ impl VramScreen {
         match corner {
             Corner::TopLeft => {
                 window.set_position(20 + 512, 20);
-            },
+            }
             Corner::TopRight => {
                 window.set_position(20 + 512 + VRAM_WIDTH as isize, 20);
-            },
+            }
             Corner::BottomLeft => {
                 window.set_position(20 + 512, 20 + VRAM_HEIGHT as isize);
-            },
+            }
             Corner::BottomRight => {
                 window.set_position(20 + 512 + VRAM_WIDTH as isize, 20 + VRAM_HEIGHT as isize);
-            },
+            }
         }
         Ok(Self {
             buffer: [0u32; VRAM_WIDTH * VRAM_HEIGHT],

@@ -5,6 +5,7 @@ use crate::buscpu;
 use crate::busppu::read;
 use crate::busppu::write;
 use crate::cpu;
+use crate::nesaudio::NesAudio;
 use crate::nesscreen::NesScreen;
 use crate::ppu::regs::RegControl;
 use crate::ppu::regs::RegMask;
@@ -127,7 +128,11 @@ const PPUADDR: u16 = 0x2006;
 const PPUDATA: u16 = 0x2007;
 const OAMDMA: u16 = 0x4014;
 
-pub fn clock(nes: &mut Nes) -> Result<()> {
+pub fn clock<S, A>(nes: &mut Nes<S, A>) -> Result<()>
+where
+    S: NesScreen,
+    A: NesAudio,
+{
     // Enter VBLANK
     if nes.ppu.scan_line == 241 && nes.ppu.scan_cycle == 1 {
         nes.ppu.reg_status.set_vblank(true);
@@ -150,7 +155,7 @@ pub fn clock(nes: &mut Nes) -> Result<()> {
     Ok(())
 }
 
-pub fn read_ppu_reg(nes: &mut Nes, addr: u16) -> Result<u8> {
+pub fn read_ppu_reg<S, A>(nes: &mut Nes<S, A>, addr: u16) -> Result<u8> {
     match addr {
         PPUCTRL | PPUMASK | PPUSCROLL | PPUADDR | OAMADDR | OAMDMA => {
             // these registers are write only
@@ -189,7 +194,11 @@ pub fn read_ppu_reg(nes: &mut Nes, addr: u16) -> Result<u8> {
     }
 }
 
-pub fn write_ppu_reg(nes: &mut Nes, addr: u16, data: u8) -> Result<()> {
+pub fn write_ppu_reg<S, A>(nes: &mut Nes<S, A>, addr: u16, data: u8) -> Result<()>
+where
+    S: NesScreen,
+    A: NesAudio,
+{
     match addr {
         PPUSTATUS => {
             log::warn!("PPUSTATUS register is read only!");
@@ -249,7 +258,11 @@ pub fn write_ppu_reg(nes: &mut Nes, addr: u16, data: u8) -> Result<()> {
     Ok(())
 }
 
-pub fn render_background(nes: &mut Nes) -> Result<()> {
+pub fn render_background<S, A>(nes: &mut Nes<S, A>) -> Result<()>
+where
+    S: NesScreen,
+    A: NesAudio,
+{
     let chr_bank = nes.ppu.reg_control.get_bg() as u16;
     // First nametable
     for i in 0x2000..=0x23bf {
@@ -295,7 +308,11 @@ pub fn render_background(nes: &mut Nes) -> Result<()> {
     Ok(())
 }
 
-pub fn render_sprites(nes: &mut Nes) -> Result<()> {
+pub fn render_sprites<S, A>(nes: &mut Nes<S, A>) -> Result<()>
+where
+    S: NesScreen,
+    A: NesAudio,
+{
     for i in (0..256).step_by(4).rev() {
         let tile_id = nes.ppu.oam[i + 1] as u16;
         let tile_x = nes.ppu.oam[i + 3];
@@ -337,7 +354,11 @@ pub fn render_sprites(nes: &mut Nes) -> Result<()> {
     Ok(())
 }
 
-pub fn draw_chr(nes: &mut Nes, bank: u16, dbg_screen: &mut impl NesScreen) -> Result<()> {
+pub fn draw_chr<S, A>(nes: &mut Nes<S, A>, bank: u16, dbg_screen: &mut impl NesScreen) -> Result<()>
+where
+    S: NesScreen,
+    A: NesAudio,
+{
     for tile_x in 0..16 {
         for tile_y in 0..16 {
             let offset = tile_x * 256 + tile_y * 16;
@@ -362,13 +383,21 @@ pub fn draw_chr(nes: &mut Nes, bank: u16, dbg_screen: &mut impl NesScreen) -> Re
     Ok(())
 }
 
-pub fn draw_vram(nes: &mut Nes, screen_no: usize, dbg_screen: &mut impl NesScreen) -> Result<()> {
+pub fn draw_vram<S, A>(
+    nes: &mut Nes<S, A>,
+    screen_no: usize,
+    dbg_screen: &mut impl NesScreen,
+) -> Result<()>
+where
+    S: NesScreen,
+    A: NesAudio,
+{
     let (nt_start, attr_start) = match screen_no {
         0 => (0x2000, 0x23c0),
         1 => (0x2400, 0x27c0),
         2 => (0x2800, 0x2bc0),
         3 => (0x2c00, 0x2fc0),
-        _ => Err(anyhow!("Invalid screen number..."))?
+        _ => Err(anyhow!("Invalid screen number..."))?,
     };
 
     let chr_bank = nes.ppu.reg_control.get_bg() as u16;
@@ -416,7 +445,11 @@ pub fn draw_vram(nes: &mut Nes, screen_no: usize, dbg_screen: &mut impl NesScree
     Ok(())
 }
 
-pub fn draw_palette(nes: &mut Nes, dbg_screen: &mut impl NesScreen) -> Result<()> {
+pub fn draw_palette<S, A>(nes: &mut Nes<S, A>, dbg_screen: &mut impl NesScreen) -> Result<()>
+where
+    S: NesScreen,
+    A: NesAudio,
+{
     for i in 0..32 {
         dbg_screen.draw_pixel(
             i % 16,

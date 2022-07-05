@@ -3,9 +3,15 @@ use anyhow::Result;
 use crate::cpu;
 use crate::cpu::addressing;
 use crate::cpu::CpuFlag;
+use crate::nesaudio::NesAudio;
+use crate::nesscreen::NesScreen;
 use crate::Nes;
 
-pub fn adc(nes: &mut Nes) -> Result<()> {
+pub fn adc<S, A>(nes: &mut Nes<S, A>) -> Result<()>
+where
+    S: NesScreen,
+    A: NesAudio,
+{
     cpu::fetch_data(nes)?;
 
     let temp: u16 = nes.cpu.ac as u16 + nes.cpu.data as u16 + cpu::get_flag(nes, CpuFlag::C) as u16;
@@ -23,7 +29,11 @@ pub fn adc(nes: &mut Nes) -> Result<()> {
     Ok(())
 }
 
-pub fn and(nes: &mut Nes) -> Result<()> {
+pub fn and<S, A>(nes: &mut Nes<S, A>) -> Result<()>
+where
+    S: NesScreen,
+    A: NesAudio,
+{
     cpu::fetch_data(nes)?;
     nes.cpu.ac &= nes.cpu.data;
     cpu::set_flag(nes, CpuFlag::Z, nes.cpu.ac == 0x00);
@@ -31,7 +41,11 @@ pub fn and(nes: &mut Nes) -> Result<()> {
     Ok(())
 }
 
-pub fn asl(nes: &mut Nes) -> Result<()> {
+pub fn asl<S, A>(nes: &mut Nes<S, A>) -> Result<()>
+where
+    S: NesScreen,
+    A: NesAudio,
+{
     cpu::fetch_data(nes)?;
     let tmp = (nes.cpu.data as u16) << 1;
 
@@ -39,7 +53,7 @@ pub fn asl(nes: &mut Nes) -> Result<()> {
     cpu::set_flag(nes, CpuFlag::Z, tmp & 0x00ff == 0);
     cpu::set_flag(nes, CpuFlag::N, tmp & 0x0080 != 0);
 
-    if nes.cpu.addr_mode == addressing::imp as usize {
+    if nes.cpu.addr_mode == addressing::imp::<S, A> as usize {
         nes.cpu.ac = tmp as u8;
     } else {
         cpu::write(nes, nes.cpu.addr, tmp as u8)?;
@@ -47,7 +61,11 @@ pub fn asl(nes: &mut Nes) -> Result<()> {
     Ok(())
 }
 
-pub fn bcc(nes: &mut Nes) -> Result<()> {
+pub fn bcc<S, A>(nes: &mut Nes<S, A>) -> Result<()>
+where
+    S: NesScreen,
+    A: NesAudio,
+{
     if !cpu::get_flag(nes, CpuFlag::C) {
         nes.cpu.cycles += 1;
         let addr = nes.cpu.pc.wrapping_add(nes.cpu.addr);
@@ -56,7 +74,11 @@ pub fn bcc(nes: &mut Nes) -> Result<()> {
     Ok(())
 }
 
-pub fn bcs(nes: &mut Nes) -> Result<()> {
+pub fn bcs<S, A>(nes: &mut Nes<S, A>) -> Result<()>
+where
+    S: NesScreen,
+    A: NesAudio,
+{
     if cpu::get_flag(nes, CpuFlag::C) {
         nes.cpu.cycles += 1;
         let addr = nes.cpu.pc.wrapping_add(nes.cpu.addr);
@@ -65,7 +87,11 @@ pub fn bcs(nes: &mut Nes) -> Result<()> {
     Ok(())
 }
 
-pub fn beq(nes: &mut Nes) -> Result<()> {
+pub fn beq<S, A>(nes: &mut Nes<S, A>) -> Result<()>
+where
+    S: NesScreen,
+    A: NesAudio,
+{
     if cpu::get_flag(nes, CpuFlag::Z) {
         nes.cpu.cycles += 1;
         let addr = nes.cpu.pc.wrapping_add(nes.cpu.addr);
@@ -74,7 +100,11 @@ pub fn beq(nes: &mut Nes) -> Result<()> {
     Ok(())
 }
 
-pub fn bit(nes: &mut Nes) -> Result<()> {
+pub fn bit<S, A>(nes: &mut Nes<S, A>) -> Result<()>
+where
+    S: NesScreen,
+    A: NesAudio,
+{
     cpu::fetch_data(nes)?;
     let tmp = nes.cpu.ac & nes.cpu.data;
     cpu::set_flag(nes, CpuFlag::Z, tmp == 0x00);
@@ -83,7 +113,11 @@ pub fn bit(nes: &mut Nes) -> Result<()> {
     Ok(())
 }
 
-pub fn bmi(nes: &mut Nes) -> Result<()> {
+pub fn bmi<S, A>(nes: &mut Nes<S, A>) -> Result<()>
+where
+    S: NesScreen,
+    A: NesAudio,
+{
     if cpu::get_flag(nes, CpuFlag::N) {
         nes.cpu.cycles += 1;
         let addr = nes.cpu.pc.wrapping_add(nes.cpu.addr);
@@ -92,7 +126,11 @@ pub fn bmi(nes: &mut Nes) -> Result<()> {
     Ok(())
 }
 
-pub fn bne(nes: &mut Nes) -> Result<()> {
+pub fn bne<S, A>(nes: &mut Nes<S, A>) -> Result<()>
+where
+    S: NesScreen,
+    A: NesAudio,
+{
     if !cpu::get_flag(nes, CpuFlag::Z) {
         nes.cpu.cycles += 1;
         let addr = nes.cpu.pc.wrapping_add(nes.cpu.addr);
@@ -101,7 +139,11 @@ pub fn bne(nes: &mut Nes) -> Result<()> {
     Ok(())
 }
 
-pub fn bpl(nes: &mut Nes) -> Result<()> {
+pub fn bpl<S, A>(nes: &mut Nes<S, A>) -> Result<()>
+where
+    S: NesScreen,
+    A: NesAudio,
+{
     if !cpu::get_flag(nes, CpuFlag::N) {
         nes.cpu.cycles += 1;
         let addr = nes.cpu.pc.wrapping_add(nes.cpu.addr);
@@ -110,7 +152,11 @@ pub fn bpl(nes: &mut Nes) -> Result<()> {
     Ok(())
 }
 
-pub fn brk(nes: &mut Nes) -> Result<()> {
+pub fn brk<S, A>(nes: &mut Nes<S, A>) -> Result<()>
+where
+    S: NesScreen,
+    A: NesAudio,
+{
     nes.cpu.pc = nes.cpu.pc.wrapping_add(1);
 
     cpu::set_flag(nes, CpuFlag::I, true);
@@ -140,7 +186,11 @@ pub fn brk(nes: &mut Nes) -> Result<()> {
     Ok(())
 }
 
-pub fn bvc(nes: &mut Nes) -> Result<()> {
+pub fn bvc<S, A>(nes: &mut Nes<S, A>) -> Result<()>
+where
+    S: NesScreen,
+    A: NesAudio,
+{
     if !cpu::get_flag(nes, CpuFlag::V) {
         nes.cpu.cycles += 1;
         let addr = nes.cpu.pc.wrapping_add(nes.cpu.addr);
@@ -149,7 +199,11 @@ pub fn bvc(nes: &mut Nes) -> Result<()> {
     Ok(())
 }
 
-pub fn bvs(nes: &mut Nes) -> Result<()> {
+pub fn bvs<S, A>(nes: &mut Nes<S, A>) -> Result<()>
+where
+    S: NesScreen,
+    A: NesAudio,
+{
     if cpu::get_flag(nes, CpuFlag::V) {
         nes.cpu.cycles += 1;
         let addr = nes.cpu.pc.wrapping_add(nes.cpu.addr);
@@ -158,27 +212,47 @@ pub fn bvs(nes: &mut Nes) -> Result<()> {
     Ok(())
 }
 
-pub fn clc(nes: &mut Nes) -> Result<()> {
+pub fn clc<S, A>(nes: &mut Nes<S, A>) -> Result<()>
+where
+    S: NesScreen,
+    A: NesAudio,
+{
     cpu::set_flag(nes, CpuFlag::C, false);
     Ok(())
 }
 
-pub fn cld(nes: &mut Nes) -> Result<()> {
+pub fn cld<S, A>(nes: &mut Nes<S, A>) -> Result<()>
+where
+    S: NesScreen,
+    A: NesAudio,
+{
     cpu::set_flag(nes, CpuFlag::D, false);
     Ok(())
 }
 
-pub fn cli(nes: &mut Nes) -> Result<()> {
+pub fn cli<S, A>(nes: &mut Nes<S, A>) -> Result<()>
+where
+    S: NesScreen,
+    A: NesAudio,
+{
     cpu::set_flag(nes, CpuFlag::I, false);
     Ok(())
 }
 
-pub fn clv(nes: &mut Nes) -> Result<()> {
+pub fn clv<S, A>(nes: &mut Nes<S, A>) -> Result<()>
+where
+    S: NesScreen,
+    A: NesAudio,
+{
     cpu::set_flag(nes, CpuFlag::V, false);
     Ok(())
 }
 
-pub fn cmp(nes: &mut Nes) -> Result<()> {
+pub fn cmp<S, A>(nes: &mut Nes<S, A>) -> Result<()>
+where
+    S: NesScreen,
+    A: NesAudio,
+{
     cpu::fetch_data(nes)?;
     let tmp = (nes.cpu.ac as u16).wrapping_sub(nes.cpu.data as u16);
     cpu::set_flag(nes, CpuFlag::C, nes.cpu.ac >= nes.cpu.data);
@@ -188,7 +262,11 @@ pub fn cmp(nes: &mut Nes) -> Result<()> {
     Ok(())
 }
 
-pub fn cpx(nes: &mut Nes) -> Result<()> {
+pub fn cpx<S, A>(nes: &mut Nes<S, A>) -> Result<()>
+where
+    S: NesScreen,
+    A: NesAudio,
+{
     cpu::fetch_data(nes)?;
     let tmp = (nes.cpu.x as u16).wrapping_sub(nes.cpu.data as u16);
     cpu::set_flag(nes, CpuFlag::C, nes.cpu.x >= nes.cpu.data);
@@ -197,7 +275,11 @@ pub fn cpx(nes: &mut Nes) -> Result<()> {
     Ok(())
 }
 
-pub fn cpy(nes: &mut Nes) -> Result<()> {
+pub fn cpy<S, A>(nes: &mut Nes<S, A>) -> Result<()>
+where
+    S: NesScreen,
+    A: NesAudio,
+{
     cpu::fetch_data(nes)?;
     let tmp = (nes.cpu.y as u16).wrapping_sub(nes.cpu.data as u16);
     cpu::set_flag(nes, CpuFlag::C, nes.cpu.y >= nes.cpu.data);
@@ -206,7 +288,11 @@ pub fn cpy(nes: &mut Nes) -> Result<()> {
     Ok(())
 }
 
-pub fn dec(nes: &mut Nes) -> Result<()> {
+pub fn dec<S, A>(nes: &mut Nes<S, A>) -> Result<()>
+where
+    S: NesScreen,
+    A: NesAudio,
+{
     cpu::fetch_data(nes)?;
     let tmp = nes.cpu.data.wrapping_sub(1);
     cpu::write(nes, nes.cpu.addr, tmp)?;
@@ -215,21 +301,33 @@ pub fn dec(nes: &mut Nes) -> Result<()> {
     Ok(())
 }
 
-pub fn dex(nes: &mut Nes) -> Result<()> {
+pub fn dex<S, A>(nes: &mut Nes<S, A>) -> Result<()>
+where
+    S: NesScreen,
+    A: NesAudio,
+{
     nes.cpu.x = nes.cpu.x.wrapping_sub(1);
     cpu::set_flag(nes, CpuFlag::Z, nes.cpu.x == 0);
     cpu::set_flag(nes, CpuFlag::N, nes.cpu.x & 0x0080 != 0);
     Ok(())
 }
 
-pub fn dey(nes: &mut Nes) -> Result<()> {
+pub fn dey<S, A>(nes: &mut Nes<S, A>) -> Result<()>
+where
+    S: NesScreen,
+    A: NesAudio,
+{
     nes.cpu.y = nes.cpu.y.wrapping_sub(1);
     cpu::set_flag(nes, CpuFlag::Z, nes.cpu.y == 0);
     cpu::set_flag(nes, CpuFlag::N, nes.cpu.y & 0x0080 != 0);
     Ok(())
 }
 
-pub fn eor(nes: &mut Nes) -> Result<()> {
+pub fn eor<S, A>(nes: &mut Nes<S, A>) -> Result<()>
+where
+    S: NesScreen,
+    A: NesAudio,
+{
     cpu::fetch_data(nes)?;
     nes.cpu.ac ^= nes.cpu.data;
     cpu::set_flag(nes, CpuFlag::Z, nes.cpu.ac == 0);
@@ -237,7 +335,11 @@ pub fn eor(nes: &mut Nes) -> Result<()> {
     Ok(())
 }
 
-pub fn inc(nes: &mut Nes) -> Result<()> {
+pub fn inc<S, A>(nes: &mut Nes<S, A>) -> Result<()>
+where
+    S: NesScreen,
+    A: NesAudio,
+{
     cpu::fetch_data(nes)?;
     let tmp = nes.cpu.data.wrapping_add(1);
     cpu::write(nes, nes.cpu.addr, tmp)?;
@@ -246,26 +348,42 @@ pub fn inc(nes: &mut Nes) -> Result<()> {
     Ok(())
 }
 
-pub fn inx(nes: &mut Nes) -> Result<()> {
+pub fn inx<S, A>(nes: &mut Nes<S, A>) -> Result<()>
+where
+    S: NesScreen,
+    A: NesAudio,
+{
     nes.cpu.x = nes.cpu.x.wrapping_add(1);
     cpu::set_flag(nes, CpuFlag::Z, nes.cpu.x == 0);
     cpu::set_flag(nes, CpuFlag::N, nes.cpu.x & 0x0080 != 0);
     Ok(())
 }
 
-pub fn iny(nes: &mut Nes) -> Result<()> {
+pub fn iny<S, A>(nes: &mut Nes<S, A>) -> Result<()>
+where
+    S: NesScreen,
+    A: NesAudio,
+{
     nes.cpu.y = nes.cpu.y.wrapping_add(1);
     cpu::set_flag(nes, CpuFlag::Z, nes.cpu.y == 0);
     cpu::set_flag(nes, CpuFlag::N, nes.cpu.y & 0x0080 != 0);
     Ok(())
 }
 
-pub fn jmp(nes: &mut Nes) -> Result<()> {
+pub fn jmp<S, A>(nes: &mut Nes<S, A>) -> Result<()>
+where
+    S: NesScreen,
+    A: NesAudio,
+{
     nes.cpu.pc = nes.cpu.addr;
     Ok(())
 }
 
-pub fn jsr(nes: &mut Nes) -> Result<()> {
+pub fn jsr<S, A>(nes: &mut Nes<S, A>) -> Result<()>
+where
+    S: NesScreen,
+    A: NesAudio,
+{
     nes.cpu.pc = nes.cpu.pc.wrapping_sub(1) as u16;
     cpu::write(
         nes,
@@ -283,7 +401,11 @@ pub fn jsr(nes: &mut Nes) -> Result<()> {
     Ok(())
 }
 
-pub fn lda(nes: &mut Nes) -> Result<()> {
+pub fn lda<S, A>(nes: &mut Nes<S, A>) -> Result<()>
+where
+    S: NesScreen,
+    A: NesAudio,
+{
     cpu::fetch_data(nes)?;
     nes.cpu.ac = nes.cpu.data;
     cpu::set_flag(nes, CpuFlag::Z, nes.cpu.ac == 0);
@@ -291,7 +413,11 @@ pub fn lda(nes: &mut Nes) -> Result<()> {
     Ok(())
 }
 
-pub fn ldx(nes: &mut Nes) -> Result<()> {
+pub fn ldx<S, A>(nes: &mut Nes<S, A>) -> Result<()>
+where
+    S: NesScreen,
+    A: NesAudio,
+{
     cpu::fetch_data(nes)?;
     nes.cpu.x = nes.cpu.data;
     cpu::set_flag(nes, CpuFlag::Z, nes.cpu.x == 0);
@@ -299,7 +425,11 @@ pub fn ldx(nes: &mut Nes) -> Result<()> {
     Ok(())
 }
 
-pub fn ldy(nes: &mut Nes) -> Result<()> {
+pub fn ldy<S, A>(nes: &mut Nes<S, A>) -> Result<()>
+where
+    S: NesScreen,
+    A: NesAudio,
+{
     cpu::fetch_data(nes)?;
     nes.cpu.y = nes.cpu.data;
     cpu::set_flag(nes, CpuFlag::Z, nes.cpu.y == 0);
@@ -307,7 +437,11 @@ pub fn ldy(nes: &mut Nes) -> Result<()> {
     Ok(())
 }
 
-pub fn lsr(nes: &mut Nes) -> Result<()> {
+pub fn lsr<S, A>(nes: &mut Nes<S, A>) -> Result<()>
+where
+    S: NesScreen,
+    A: NesAudio,
+{
     cpu::fetch_data(nes)?;
 
     cpu::set_flag(nes, CpuFlag::C, nes.cpu.data & 0x0001 != 0);
@@ -317,7 +451,7 @@ pub fn lsr(nes: &mut Nes) -> Result<()> {
     cpu::set_flag(nes, CpuFlag::Z, tmp & 0x00ff == 0);
     cpu::set_flag(nes, CpuFlag::N, tmp & 0x0080 != 0);
 
-    if nes.cpu.addr_mode == addressing::imp as usize {
+    if nes.cpu.addr_mode == addressing::imp::<S, A> as usize {
         nes.cpu.ac = tmp as u8;
     } else {
         cpu::write(nes, nes.cpu.addr, tmp as u8)?;
@@ -325,11 +459,19 @@ pub fn lsr(nes: &mut Nes) -> Result<()> {
     Ok(())
 }
 
-pub fn nop(_nes: &mut Nes) -> Result<()> {
+pub fn nop<S, A>(_nes: &mut Nes<S, A>) -> Result<()>
+where
+    S: NesScreen,
+    A: NesAudio,
+{
     Ok(())
 }
 
-pub fn ora(nes: &mut Nes) -> Result<()> {
+pub fn ora<S, A>(nes: &mut Nes<S, A>) -> Result<()>
+where
+    S: NesScreen,
+    A: NesAudio,
+{
     cpu::fetch_data(nes)?;
     nes.cpu.ac |= nes.cpu.data;
     cpu::set_flag(nes, CpuFlag::Z, nes.cpu.ac == 0x00);
@@ -337,13 +479,21 @@ pub fn ora(nes: &mut Nes) -> Result<()> {
     Ok(())
 }
 
-pub fn pha(nes: &mut Nes) -> Result<()> {
+pub fn pha<S, A>(nes: &mut Nes<S, A>) -> Result<()>
+where
+    S: NesScreen,
+    A: NesAudio,
+{
     cpu::write(nes, (nes.cpu.sp as u16).wrapping_add(0x0100), nes.cpu.ac)?;
     nes.cpu.sp = nes.cpu.sp.wrapping_sub(1);
     Ok(())
 }
 
-pub fn php(nes: &mut Nes) -> Result<()> {
+pub fn php<S, A>(nes: &mut Nes<S, A>) -> Result<()>
+where
+    S: NesScreen,
+    A: NesAudio,
+{
     cpu::write(
         nes,
         (nes.cpu.sp as u16).wrapping_add(0x0100),
@@ -354,7 +504,11 @@ pub fn php(nes: &mut Nes) -> Result<()> {
     Ok(())
 }
 
-pub fn pla(nes: &mut Nes) -> Result<()> {
+pub fn pla<S, A>(nes: &mut Nes<S, A>) -> Result<()>
+where
+    S: NesScreen,
+    A: NesAudio,
+{
     nes.cpu.sp = nes.cpu.sp.wrapping_add(1);
     nes.cpu.ac = cpu::read(nes, (nes.cpu.sp as u16).wrapping_add(0x0100))?;
     cpu::set_flag(nes, CpuFlag::Z, nes.cpu.ac == 0x00);
@@ -362,7 +516,11 @@ pub fn pla(nes: &mut Nes) -> Result<()> {
     Ok(())
 }
 
-pub fn plp(nes: &mut Nes) -> Result<()> {
+pub fn plp<S, A>(nes: &mut Nes<S, A>) -> Result<()>
+where
+    S: NesScreen,
+    A: NesAudio,
+{
     nes.cpu.sp = nes.cpu.sp.wrapping_add(1);
     nes.cpu.status = cpu::read(nes, (nes.cpu.sp as u16).wrapping_add(0x0100))?;
     cpu::set_flag(nes, CpuFlag::B, false);
@@ -370,7 +528,11 @@ pub fn plp(nes: &mut Nes) -> Result<()> {
     Ok(())
 }
 
-pub fn rol(nes: &mut Nes) -> Result<()> {
+pub fn rol<S, A>(nes: &mut Nes<S, A>) -> Result<()>
+where
+    S: NesScreen,
+    A: NesAudio,
+{
     cpu::fetch_data(nes)?;
     let mut tmp = (nes.cpu.data as u16) << 1;
     if cpu::get_flag(nes, CpuFlag::C) {
@@ -381,7 +543,7 @@ pub fn rol(nes: &mut Nes) -> Result<()> {
     cpu::set_flag(nes, CpuFlag::Z, tmp & 0x00ff == 0);
     cpu::set_flag(nes, CpuFlag::N, tmp & 0x0080 != 0);
 
-    if nes.cpu.addr_mode == addressing::imp as usize {
+    if nes.cpu.addr_mode == addressing::imp::<S, A> as usize {
         nes.cpu.ac = tmp as u8;
     } else {
         cpu::write(nes, nes.cpu.addr, tmp as u8)?;
@@ -389,7 +551,11 @@ pub fn rol(nes: &mut Nes) -> Result<()> {
     Ok(())
 }
 
-pub fn ror(nes: &mut Nes) -> Result<()> {
+pub fn ror<S, A>(nes: &mut Nes<S, A>) -> Result<()>
+where
+    S: NesScreen,
+    A: NesAudio,
+{
     cpu::fetch_data(nes)?;
     let mut tmp = (nes.cpu.data as u16) >> 1;
     if cpu::get_flag(nes, CpuFlag::C) {
@@ -400,7 +566,7 @@ pub fn ror(nes: &mut Nes) -> Result<()> {
     cpu::set_flag(nes, CpuFlag::Z, tmp & 0x00ff == 0);
     cpu::set_flag(nes, CpuFlag::N, tmp & 0x0080 != 0);
 
-    if nes.cpu.addr_mode == addressing::imp as usize {
+    if nes.cpu.addr_mode == addressing::imp::<S, A> as usize {
         nes.cpu.ac = tmp as u8;
     } else {
         cpu::write(nes, nes.cpu.addr, tmp as u8)?;
@@ -408,7 +574,11 @@ pub fn ror(nes: &mut Nes) -> Result<()> {
     Ok(())
 }
 
-pub fn rti(nes: &mut Nes) -> Result<()> {
+pub fn rti<S, A>(nes: &mut Nes<S, A>) -> Result<()>
+where
+    S: NesScreen,
+    A: NesAudio,
+{
     nes.cpu.sp = nes.cpu.sp.wrapping_add(1);
     nes.cpu.status = cpu::read(nes, (nes.cpu.sp as u16).wrapping_add(0x0100))?;
     cpu::set_flag(nes, CpuFlag::U, true);
@@ -420,7 +590,11 @@ pub fn rti(nes: &mut Nes) -> Result<()> {
     Ok(())
 }
 
-pub fn rts(nes: &mut Nes) -> Result<()> {
+pub fn rts<S, A>(nes: &mut Nes<S, A>) -> Result<()>
+where
+    S: NesScreen,
+    A: NesAudio,
+{
     nes.cpu.sp = nes.cpu.sp.wrapping_add(1);
     nes.cpu.pc = cpu::read(nes, (nes.cpu.sp as u16).wrapping_add(0x0100))? as u16;
     nes.cpu.sp = nes.cpu.sp.wrapping_add(1);
@@ -429,7 +603,11 @@ pub fn rts(nes: &mut Nes) -> Result<()> {
     Ok(())
 }
 
-pub fn sbc(nes: &mut Nes) -> Result<()> {
+pub fn sbc<S, A>(nes: &mut Nes<S, A>) -> Result<()>
+where
+    S: NesScreen,
+    A: NesAudio,
+{
     cpu::fetch_data(nes)?;
     let temp1: u16 = nes.cpu.data as u16 ^ 0x00ff;
     let mut temp2: u16 = (nes.cpu.ac as u16).wrapping_add(temp1);
@@ -451,83 +629,139 @@ pub fn sbc(nes: &mut Nes) -> Result<()> {
     Ok(())
 }
 
-pub fn sec(nes: &mut Nes) -> Result<()> {
+pub fn sec<S, A>(nes: &mut Nes<S, A>) -> Result<()>
+where
+    S: NesScreen,
+    A: NesAudio,
+{
     cpu::set_flag(nes, CpuFlag::C, true);
     Ok(())
 }
 
-pub fn sed(nes: &mut Nes) -> Result<()> {
+pub fn sed<S, A>(nes: &mut Nes<S, A>) -> Result<()>
+where
+    S: NesScreen,
+    A: NesAudio,
+{
     cpu::set_flag(nes, CpuFlag::D, true);
     Ok(())
 }
 
-pub fn sei(nes: &mut Nes) -> Result<()> {
+pub fn sei<S, A>(nes: &mut Nes<S, A>) -> Result<()>
+where
+    S: NesScreen,
+    A: NesAudio,
+{
     cpu::set_flag(nes, CpuFlag::I, true);
     Ok(())
 }
 
-pub fn sta(nes: &mut Nes) -> Result<()> {
+pub fn sta<S, A>(nes: &mut Nes<S, A>) -> Result<()>
+where
+    S: NesScreen,
+    A: NesAudio,
+{
     cpu::write(nes, nes.cpu.addr, nes.cpu.ac)?;
     Ok(())
 }
 
-pub fn stx(nes: &mut Nes) -> Result<()> {
+pub fn stx<S, A>(nes: &mut Nes<S, A>) -> Result<()>
+where
+    S: NesScreen,
+    A: NesAudio,
+{
     cpu::write(nes, nes.cpu.addr, nes.cpu.x)?;
     Ok(())
 }
 
-pub fn sty(nes: &mut Nes) -> Result<()> {
+pub fn sty<S, A>(nes: &mut Nes<S, A>) -> Result<()>
+where
+    S: NesScreen,
+    A: NesAudio,
+{
     cpu::write(nes, nes.cpu.addr, nes.cpu.y)?;
     Ok(())
 }
 
-pub fn tax(nes: &mut Nes) -> Result<()> {
+pub fn tax<S, A>(nes: &mut Nes<S, A>) -> Result<()>
+where
+    S: NesScreen,
+    A: NesAudio,
+{
     nes.cpu.x = nes.cpu.ac;
     cpu::set_flag(nes, CpuFlag::Z, nes.cpu.x == 0);
     cpu::set_flag(nes, CpuFlag::N, nes.cpu.x & 0x0080 != 0);
     Ok(())
 }
 
-pub fn tay(nes: &mut Nes) -> Result<()> {
+pub fn tay<S, A>(nes: &mut Nes<S, A>) -> Result<()>
+where
+    S: NesScreen,
+    A: NesAudio,
+{
     nes.cpu.y = nes.cpu.ac;
     cpu::set_flag(nes, CpuFlag::Z, nes.cpu.y == 0);
     cpu::set_flag(nes, CpuFlag::N, nes.cpu.y & 0x0080 != 0);
     Ok(())
 }
 
-pub fn tsx(nes: &mut Nes) -> Result<()> {
+pub fn tsx<S, A>(nes: &mut Nes<S, A>) -> Result<()>
+where
+    S: NesScreen,
+    A: NesAudio,
+{
     nes.cpu.x = nes.cpu.sp;
     cpu::set_flag(nes, CpuFlag::Z, nes.cpu.x == 0);
     cpu::set_flag(nes, CpuFlag::N, nes.cpu.x & 0x0080 != 0);
     Ok(())
 }
 
-pub fn txa(nes: &mut Nes) -> Result<()> {
+pub fn txa<S, A>(nes: &mut Nes<S, A>) -> Result<()>
+where
+    S: NesScreen,
+    A: NesAudio,
+{
     nes.cpu.ac = nes.cpu.x;
     cpu::set_flag(nes, CpuFlag::Z, nes.cpu.ac == 0);
     cpu::set_flag(nes, CpuFlag::N, nes.cpu.ac & 0x0080 != 0);
     Ok(())
 }
 
-pub fn txs(nes: &mut Nes) -> Result<()> {
+pub fn txs<S, A>(nes: &mut Nes<S, A>) -> Result<()>
+where
+    S: NesScreen,
+    A: NesAudio,
+{
     nes.cpu.sp = nes.cpu.x;
     Ok(())
 }
 
-pub fn tya(nes: &mut Nes) -> Result<()> {
+pub fn tya<S, A>(nes: &mut Nes<S, A>) -> Result<()>
+where
+    S: NesScreen,
+    A: NesAudio,
+{
     nes.cpu.ac = nes.cpu.y;
     cpu::set_flag(nes, CpuFlag::Z, nes.cpu.ac == 0);
     cpu::set_flag(nes, CpuFlag::N, nes.cpu.ac & 0x0080 != 0);
     Ok(())
 }
 
-pub fn xxx(_nes: &mut Nes) -> Result<()> {
+pub fn xxx<S, A>(_nes: &mut Nes<S, A>) -> Result<()>
+where
+    S: NesScreen,
+    A: NesAudio,
+{
     Ok(())
 }
 
 // UNOFFICIAL OPCODES:
 
-pub fn dcp(nes: &mut Nes) -> Result<()> {
+pub fn dcp<S, A>(nes: &mut Nes<S, A>) -> Result<()>
+where
+    S: NesScreen,
+    A: NesAudio,
+{
     cpu::fetch_data(nes)?;
     nes.cpu.data = nes.cpu.data.wrapping_sub(1);
     cpu::write(nes, nes.cpu.addr, nes.cpu.data)?;
@@ -540,12 +774,20 @@ pub fn dcp(nes: &mut Nes) -> Result<()> {
     Ok(())
 }
 
-pub fn dop(nes: &mut Nes) -> Result<()> {
+pub fn dop<S, A>(nes: &mut Nes<S, A>) -> Result<()>
+where
+    S: NesScreen,
+    A: NesAudio,
+{
     nes.cpu.pc = nes.cpu.pc.wrapping_add(1);
     Ok(())
 }
 
-pub fn isb(nes: &mut Nes) -> Result<()> {
+pub fn isb<S, A>(nes: &mut Nes<S, A>) -> Result<()>
+where
+    S: NesScreen,
+    A: NesAudio,
+{
     cpu::fetch_data(nes)?;
     let mut tmp = nes.cpu.data.wrapping_add(1);
     cpu::write(nes, nes.cpu.addr, tmp)?;
@@ -563,7 +805,11 @@ pub fn isb(nes: &mut Nes) -> Result<()> {
     Ok(())
 }
 
-pub fn lax(nes: &mut Nes) -> Result<()> {
+pub fn lax<S, A>(nes: &mut Nes<S, A>) -> Result<()>
+where
+    S: NesScreen,
+    A: NesAudio,
+{
     cpu::fetch_data(nes)?;
     nes.cpu.ac = nes.cpu.data;
     nes.cpu.x = nes.cpu.data;
@@ -572,7 +818,11 @@ pub fn lax(nes: &mut Nes) -> Result<()> {
     Ok(())
 }
 
-pub fn rla(nes: &mut Nes) -> Result<()> {
+pub fn rla<S, A>(nes: &mut Nes<S, A>) -> Result<()>
+where
+    S: NesScreen,
+    A: NesAudio,
+{
     cpu::fetch_data(nes)?;
     let mut tmp = (nes.cpu.data as u16) << 1;
     if cpu::get_flag(nes, CpuFlag::C) {
@@ -581,7 +831,7 @@ pub fn rla(nes: &mut Nes) -> Result<()> {
 
     cpu::set_flag(nes, CpuFlag::C, tmp & 0xff00 != 0);
 
-    if nes.cpu.addr_mode == addressing::imp as usize {
+    if nes.cpu.addr_mode == addressing::imp::<S, A> as usize {
         nes.cpu.ac = tmp as u8;
     } else {
         cpu::write(nes, nes.cpu.addr, tmp as u8)?;
@@ -594,7 +844,11 @@ pub fn rla(nes: &mut Nes) -> Result<()> {
     Ok(())
 }
 
-pub fn rra(nes: &mut Nes) -> Result<()> {
+pub fn rra<S, A>(nes: &mut Nes<S, A>) -> Result<()>
+where
+    S: NesScreen,
+    A: NesAudio,
+{
     cpu::fetch_data(nes)?;
     let carry = nes.cpu.data & 0x01;
     let result = (nes.cpu.data >> 1) | (cpu::get_flag(nes, CpuFlag::C) as u8) << 7;
@@ -612,19 +866,27 @@ pub fn rra(nes: &mut Nes) -> Result<()> {
     Ok(())
 }
 
-pub fn sax(nes: &mut Nes) -> Result<()> {
+pub fn sax<S, A>(nes: &mut Nes<S, A>) -> Result<()>
+where
+    S: NesScreen,
+    A: NesAudio,
+{
     let val = nes.cpu.ac & nes.cpu.x;
     cpu::write(nes, nes.cpu.addr, val)?;
     Ok(())
 }
 
-pub fn slo(nes: &mut Nes) -> Result<()> {
+pub fn slo<S, A>(nes: &mut Nes<S, A>) -> Result<()>
+where
+    S: NesScreen,
+    A: NesAudio,
+{
     cpu::fetch_data(nes)?;
     let tmp = (nes.cpu.data as u16) << 1;
 
     cpu::set_flag(nes, CpuFlag::C, tmp & 0xff00 != 0);
 
-    if nes.cpu.addr_mode == addressing::imp as usize {
+    if nes.cpu.addr_mode == addressing::imp::<S, A> as usize {
         nes.cpu.ac = tmp as u8;
     } else {
         cpu::write(nes, nes.cpu.addr, tmp as u8)?;
@@ -637,13 +899,17 @@ pub fn slo(nes: &mut Nes) -> Result<()> {
     Ok(())
 }
 
-pub fn sre(nes: &mut Nes) -> Result<()> {
+pub fn sre<S, A>(nes: &mut Nes<S, A>) -> Result<()>
+where
+    S: NesScreen,
+    A: NesAudio,
+{
     cpu::fetch_data(nes)?;
     cpu::set_flag(nes, CpuFlag::C, nes.cpu.data & 0x0001 != 0);
 
     let tmp = (nes.cpu.data as u16) >> 1;
 
-    if nes.cpu.addr_mode == addressing::imp as usize {
+    if nes.cpu.addr_mode == addressing::imp::<S, A> as usize {
         nes.cpu.ac = tmp as u8;
     } else {
         cpu::write(nes, nes.cpu.addr, tmp as u8)?;
@@ -657,7 +923,11 @@ pub fn sre(nes: &mut Nes) -> Result<()> {
     Ok(())
 }
 
-pub fn top(nes: &mut Nes) -> Result<()> {
+pub fn top<S, A>(nes: &mut Nes<S, A>) -> Result<()>
+where
+    S: NesScreen,
+    A: NesAudio,
+{
     nes.cpu.pc = nes.cpu.pc.wrapping_add(2);
     Ok(())
 }

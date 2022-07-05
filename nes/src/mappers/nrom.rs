@@ -6,8 +6,8 @@ use crate::Nes;
 // Mapper 0
 pub struct Nrom;
 
-impl Mapper for Nrom {
-    fn read_prg(&mut self, nes: &mut Nes, addr: u16) -> Result<u8> {
+impl<S, A> Mapper<S, A> for Nrom {
+    fn read_prg(&mut self, nes: &mut Nes<S, A>, addr: u16) -> Result<u8> {
         let mut mapped_addr = 0;
         if 0x8000 <= addr {
             if nes.cartridge.prg_banks == 2 {
@@ -20,7 +20,7 @@ impl Mapper for Nrom {
         Ok(nes.cartridge.prgmem[mapped_addr as usize])
     }
 
-    fn write_prg(&mut self, nes: &mut Nes, addr: u16, data: u8) -> Result<()> {
+    fn write_prg(&mut self, nes: &mut Nes<S, A>, addr: u16, data: u8) -> Result<()> {
         let mut mapped_addr = 0;
         if 0x8000 <= addr {
             if nes.cartridge.prg_banks == 2 {
@@ -34,11 +34,11 @@ impl Mapper for Nrom {
         Ok(())
     }
 
-    fn read_chr(&mut self, nes: &mut Nes, addr: u16) -> Result<u8> {
+    fn read_chr(&mut self, nes: &mut Nes<S, A>, addr: u16) -> Result<u8> {
         Ok(nes.cartridge.chrmem[addr as usize])
     }
 
-    fn write_chr(&mut self, nes: &mut Nes, addr: u16, data: u8) -> Result<()> {
+    fn write_chr(&mut self, nes: &mut Nes<S, A>, addr: u16, data: u8) -> Result<()> {
         nes.cartridge.chrmem[addr as usize] = data;
         Ok(())
     }

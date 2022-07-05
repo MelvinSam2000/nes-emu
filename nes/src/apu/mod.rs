@@ -3,6 +3,7 @@ use anyhow::Result;
 
 use self::pulse::PulseChannel;
 use self::triangle::TriangleChannel;
+use crate::nesaudio::NesAudio;
 use crate::Nes;
 
 pub enum AudioChannel {
@@ -18,11 +19,14 @@ pub struct Apu {
     triangle: TriangleChannel,
 }
 
-pub fn read(_nes: &mut Nes, _addr: u16) -> Result<u8> {
+pub fn read<S, A>(_nes: &mut Nes<S, A>, _addr: u16) -> Result<u8> {
     Err(anyhow!("Cannot read anything from APU..."))
 }
 
-pub fn write(nes: &mut Nes, addr: u16, data: u8) -> Result<()> {
+pub fn write<S, A>(nes: &mut Nes<S, A>, addr: u16, data: u8) -> Result<()>
+where
+    A: NesAudio,
+{
     match addr {
         // PULSE 1
         0x4000 => {

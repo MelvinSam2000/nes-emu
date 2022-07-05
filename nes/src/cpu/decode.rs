@@ -2,17 +2,23 @@ use anyhow::Result;
 
 use crate::cpu::addressing as addr;
 use crate::cpu::instructions as inst;
+use crate::nesaudio::NesAudio;
+use crate::nesscreen::NesScreen;
 use crate::Nes;
 
-pub struct DecodedOpcode {
+pub struct DecodedOpcode<S, A> {
     pub cycles: u8,
     pub bytes: u8,
-    pub addr_mode: fn(&mut Nes) -> Result<()>,
-    pub instruction: fn(&mut Nes) -> Result<()>,
+    pub addr_mode: fn(&mut Nes<S, A>) -> Result<()>,
+    pub instruction: fn(&mut Nes<S, A>) -> Result<()>,
     pub instruction_str: &'static str,
 }
 
-pub fn decode(opcode: u8) -> DecodedOpcode {
+pub fn decode<S, A>(opcode: u8) -> DecodedOpcode<S, A>
+where
+    S: NesScreen,
+    A: NesAudio,
+{
     match opcode {
         0x00 => wr(7, 1, addr::imp, inst::brk, "BRK"),
         0x01 => wr(6, 2, addr::idx, inst::ora, "ORA"),
@@ -266,13 +272,17 @@ pub fn decode(opcode: u8) -> DecodedOpcode {
 }
 
 // wrapper to remove function overhead from decode table
-fn wr(
+fn wr<S, A>(
     cycles: u8,
     bytes: u8,
-    addr_mode: fn(&mut Nes) -> Result<()>,
-    instruction: fn(&mut Nes) -> Result<()>,
+    addr_mode: fn(&mut Nes<S, A>) -> Result<()>,
+    instruction: fn(&mut Nes<S, A>) -> Result<()>,
     instruction_str: &'static str,
-) -> DecodedOpcode {
+) -> DecodedOpcode<S, A>
+where
+    S: NesScreen,
+    A: NesAudio,
+{
     DecodedOpcode {
         cycles,
         bytes,

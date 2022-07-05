@@ -3,6 +3,8 @@ use anyhow::Result;
 
 use crate::apu;
 use crate::cartridge;
+use crate::nesaudio::NesAudio;
+use crate::nesscreen::NesScreen;
 use crate::ppu;
 use crate::Nes;
 
@@ -16,7 +18,11 @@ impl Default for BusCpu {
     }
 }
 
-pub fn read(nes: &mut Nes, addr: u16) -> Result<u8> {
+pub fn read<S, A>(nes: &mut Nes<S, A>, addr: u16) -> Result<u8>
+where
+    S: NesScreen,
+    A: NesAudio,
+{
     match addr {
         0x0000..=0x1fff => Ok(nes.bus_cpu.ram[addr as usize & 0x07ff]),
         0x2000..=0x3fff => ppu::read_ppu_reg(nes, addr & 0x2007),
@@ -28,7 +34,11 @@ pub fn read(nes: &mut Nes, addr: u16) -> Result<u8> {
     }
 }
 
-pub fn write(nes: &mut Nes, addr: u16, data: u8) -> Result<()> {
+pub fn write<S, A>(nes: &mut Nes<S, A>, addr: u16, data: u8) -> Result<()>
+where
+    S: NesScreen,
+    A: NesAudio,
+{
     match addr {
         0x0000..=0x1fff => {
             nes.bus_cpu.ram[addr as usize & 0x07ff] = data;

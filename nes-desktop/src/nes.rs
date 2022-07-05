@@ -14,7 +14,7 @@ use crate::dbg::vramscreen::VramScreen;
 use crate::screen::NesScreen;
 
 pub struct Nes {
-    nes: ::nes::Nes,
+    nes: ::nes::Nes<NesScreen, NesAudio>,
     window: Rc<RefCell<Window>>,
     dbg_chr: [ChrScreen; 2],
     dbg_vram: [VramScreen; 4],
@@ -36,10 +36,7 @@ impl Nes {
         let dbg_palette = PaletteScreen::new()?;
 
         Ok(Self {
-            nes: ::nes::Nes::new(
-                Box::new(NesScreen::new(window.clone())),
-                Box::new(NesAudio::default()),
-            ),
+            nes: ::nes::Nes::new(NesScreen::new(window.clone()), NesAudio::default()),
             window,
             dbg_chr,
             dbg_vram,

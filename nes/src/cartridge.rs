@@ -11,12 +11,12 @@ use crate::mappers::uxrom::Uxrom;
 use crate::mappers::Mapper;
 use crate::Nes;
 
-pub struct Cartridge {
+pub struct Cartridge<S, A> {
     pub prgmem: Vec<u8>,
     pub chrmem: Vec<u8>,
     pub prg_banks: u8,
     pub chr_banks: u8,
-    pub mapper: Rc<RefCell<dyn Mapper>>,
+    pub mapper: Rc<RefCell<dyn Mapper<S, A>>>,
     pub mirroring: Mirroring,
 }
 
@@ -28,7 +28,7 @@ pub enum Mirroring {
     //ONESCREEN_HI,
 }
 
-impl Default for Cartridge {
+impl<S, A> Default for Cartridge<S, A> {
     fn default() -> Self {
         Self {
             prgmem: vec![],
@@ -41,7 +41,7 @@ impl Default for Cartridge {
     }
 }
 
-pub fn load_cartridge(nes: &mut Nes, rom_bytes: &[u8]) -> Result<()> {
+pub fn load_cartridge<S, A>(nes: &mut Nes<S, A>, rom_bytes: &[u8]) -> Result<()> {
     if rom_bytes.len() < 0xf {
         return Err(anyhow!("Input ROM too small!"));
     }
@@ -98,25 +98,25 @@ pub fn load_cartridge(nes: &mut Nes, rom_bytes: &[u8]) -> Result<()> {
     Ok(())
 }
 
-pub fn prg_read(nes: &mut Nes, addr: u16) -> Result<u8> {
+pub fn prg_read<S, A>(nes: &mut Nes<S, A>, addr: u16) -> Result<u8> {
     let mapper = nes.cartridge.mapper.clone();
     let mut mapper_ref = mapper.borrow_mut();
     mapper_ref.read_prg(nes, addr)
 }
 
-pub fn prg_write(nes: &mut Nes, addr: u16, data: u8) -> Result<()> {
+pub fn prg_write<S, A>(nes: &mut Nes<S, A>, addr: u16, data: u8) -> Result<()> {
     let mapper = nes.cartridge.mapper.clone();
     let mut mapper_ref = mapper.borrow_mut();
     mapper_ref.write_prg(nes, addr, data)
 }
 
-pub fn chr_read(nes: &mut Nes, addr: u16) -> Result<u8> {
+pub fn chr_read<S, A>(nes: &mut Nes<S, A>, addr: u16) -> Result<u8> {
     let mapper = nes.cartridge.mapper.clone();
     let mut mapper_ref = mapper.borrow_mut();
     mapper_ref.read_chr(nes, addr)
 }
 
-pub fn chr_write(nes: &mut Nes, addr: u16, data: u8) -> Result<()> {
+pub fn chr_write<S, A>(nes: &mut Nes<S, A>, addr: u16, data: u8) -> Result<()> {
     let mapper = nes.cartridge.mapper.clone();
     let mut mapper_ref = mapper.borrow_mut();
     mapper_ref.write_chr(nes, addr, data)

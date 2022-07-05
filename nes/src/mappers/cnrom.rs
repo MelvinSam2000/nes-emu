@@ -10,8 +10,8 @@ pub struct Cnrom {
     banksel: u8,
 }
 
-impl Mapper for Cnrom {
-    fn read_prg(&mut self, nes: &mut Nes, addr: u16) -> Result<u8> {
+impl<S, A> Mapper<S, A> for Cnrom {
+    fn read_prg(&mut self, nes: &mut Nes<S, A>, addr: u16) -> Result<u8> {
         let mut mapped_addr = 0;
         if 0x8000 <= addr {
             if nes.cartridge.prg_banks == 2 {
@@ -24,7 +24,7 @@ impl Mapper for Cnrom {
         Ok(nes.cartridge.prgmem[mapped_addr as usize])
     }
 
-    fn write_prg(&mut self, _nes: &mut Nes, addr: u16, data: u8) -> Result<()> {
+    fn write_prg(&mut self, _nes: &mut Nes<S, A>, addr: u16, data: u8) -> Result<()> {
         match addr {
             0x8000..=0xffff => {
                 self.banksel = (data & 0x03) as u8;
@@ -34,7 +34,7 @@ impl Mapper for Cnrom {
         }
     }
 
-    fn read_chr(&mut self, nes: &mut Nes, addr: u16) -> Result<u8> {
+    fn read_chr(&mut self, nes: &mut Nes<S, A>, addr: u16) -> Result<u8> {
         match addr {
             0x0000..=0x1fff => {
                 let mapped_addr = (self.banksel as u16) * 0x2000 + addr;
@@ -44,7 +44,7 @@ impl Mapper for Cnrom {
         }
     }
 
-    fn write_chr(&mut self, _nes: &mut Nes, addr: u16, _data: u8) -> Result<()> {
+    fn write_chr(&mut self, _nes: &mut Nes<S, A>, addr: u16, _data: u8) -> Result<()> {
         Err(anyhow!("Cannot write at CHR address {:#x} for CNROM", addr))
     }
 }

@@ -17,7 +17,7 @@ fn nes_test_log() -> Result<()> {
     const NES_TEST_FILE: &str = "test-files/nestest.nes";
     const NES_TEST_LOG: &str = "test-files/nestest.log";
 
-    let mut nes = Nes::new(Box::new(NoScreen), Box::new(NoAudio));
+    let mut nes = Nes::new(NoScreen, NoAudio);
 
     let nestest_rom = fs::read(NES_TEST_FILE)?;
     let mut nestest_log = BufReader::new(File::open(NES_TEST_LOG)?)

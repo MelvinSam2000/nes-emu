@@ -6,6 +6,8 @@ use anyhow::Result;
 use self::decode::DecodedOpcode;
 use crate::buscpu::read;
 use crate::buscpu::write;
+use crate::nesaudio::NesAudio;
+use crate::nesscreen::NesScreen;
 use crate::Nes;
 
 #[derive(Default)]
@@ -37,7 +39,11 @@ pub enum CpuFlag {
     N = 1 << 7, // Negative
 }
 
-pub fn reset(nes: &mut Nes) -> Result<()> {
+pub fn reset<S, A>(nes: &mut Nes<S, A>) -> Result<()>
+where
+    S: NesScreen,
+    A: NesAudio,
+{
     nes.cpu.ac = 0;
     nes.cpu.x = 0;
     nes.cpu.y = 0;
@@ -48,7 +54,11 @@ pub fn reset(nes: &mut Nes) -> Result<()> {
     Ok(())
 }
 
-pub fn clock(nes: &mut Nes) -> Result<()> {
+pub fn clock<S, A>(nes: &mut Nes<S, A>) -> Result<()>
+where
+    S: NesScreen,
+    A: NesAudio,
+{
     if nes.cpu.cycles > 0 {
         nes.cpu.cycles -= 1;
         return Ok(());
@@ -74,7 +84,11 @@ pub fn clock(nes: &mut Nes) -> Result<()> {
     Ok(())
 }
 
-pub fn irq(nes: &mut Nes) -> Result<()> {
+pub fn irq<S, A>(nes: &mut Nes<S, A>) -> Result<()>
+where
+    S: NesScreen,
+    A: NesAudio,
+{
     if get_flag(nes, CpuFlag::I) {
         return Ok(());
     }
@@ -106,7 +120,11 @@ pub fn irq(nes: &mut Nes) -> Result<()> {
     Ok(())
 }
 
-pub fn nmi(nes: &mut Nes) -> Result<()> {
+pub fn nmi<S, A>(nes: &mut Nes<S, A>) -> Result<()>
+where
+    S: NesScreen,
+    A: NesAudio,
+{
     write(
         nes,
         (nes.cpu.sp as u16).wrapping_add(0x0100),
@@ -137,7 +155,7 @@ pub fn nmi(nes: &mut Nes) -> Result<()> {
 
 // HELPER METHODS
 
-pub fn set_flag(nes: &mut Nes, flag: CpuFlag, val: bool) {
+pub fn set_flag<S, A>(nes: &mut Nes<S, A>, flag: CpuFlag, val: bool) {
     if val {
         nes.cpu.status |= flag as u8;
     } else {
@@ -145,29 +163,45 @@ pub fn set_flag(nes: &mut Nes, flag: CpuFlag, val: bool) {
     }
 }
 
-pub fn get_flag(nes: &Nes, flag: CpuFlag) -> bool {
+pub fn get_flag<S, A>(nes: &Nes<S, A>, flag: CpuFlag) -> bool {
     flag as u8 & nes.cpu.status != 0x00
 }
 
-pub fn fetch_word(nes: &mut Nes, addr: u16) -> Result<u16> {
+pub fn fetch_word<S, A>(nes: &mut Nes<S, A>, addr: u16) -> Result<u16>
+where
+    S: NesScreen,
+    A: NesAudio,
+{
     let lo = read(nes, addr)? as u16;
     let hi = read(nes, addr.wrapping_add(1))? as u16;
     Ok(hi << 8 | lo)
 }
 
-pub fn pc_fetch_byte(nes: &mut Nes) -> Result<u8> {
+pub fn pc_fetch_byte<S, A>(nes: &mut Nes<S, A>) -> Result<u8>
+where
+    S: NesScreen,
+    A: NesAudio,
+{
     let data = read(nes, nes.cpu.pc)?;
     nes.cpu.pc = nes.cpu.pc.wrapping_add(1);
     Ok(data)
 }
 
-pub fn pc_fetch_word(nes: &mut Nes) -> Result<u16> {
+pub fn pc_fetch_word<S, A>(nes: &mut Nes<S, A>) -> Result<u16>
+where
+    S: NesScreen,
+    A: NesAudio,
+{
     let data = fetch_word(nes, nes.cpu.pc)?;
     nes.cpu.pc = nes.cpu.pc.wrapping_add(2);
     Ok(data)
 }
 
-pub fn fetch_data(nes: &mut Nes) -> Result<()> {
+pub fn fetch_data<S, A>(nes: &mut Nes<S, A>) -> Result<()>
+where
+    S: NesScreen,
+    A: NesAudio,
+{
     if !nes.cpu.is_imp {
         nes.cpu.data = read(nes, nes.cpu.addr)?;
     }
@@ -175,9 +209,13 @@ pub fn fetch_data(nes: &mut Nes) -> Result<()> {
 }
 
 // For debugging
-pub fn step(nes: &mut Nes) -> Result<String> {
+pub fn step<S, A>(nes: &mut Nes<S, A>) -> Result<String>
+where
+    S: NesScreen,
+    A: NesAudio,
+{
     let inst_pc = nes.cpu.pc;
-    let decoded = decode::decode(read(nes, inst_pc)?);
+    let decoded = decode::decode::<S, A>(read(nes, inst_pc)?);
 
     let (a, x, y, p, sp) = (nes.cpu.ac, nes.cpu.x, nes.cpu.y, nes.cpu.status, nes.cpu.sp);
 

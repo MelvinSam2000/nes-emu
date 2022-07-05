@@ -10,8 +10,8 @@ pub struct Uxrom {
     banksel: u8,
 }
 
-impl Mapper for Uxrom {
-    fn read_prg(&mut self, nes: &mut Nes, addr: u16) -> Result<u8> {
+impl<S, A> Mapper<S, A> for Uxrom {
+    fn read_prg(&mut self, nes: &mut Nes<S, A>, addr: u16) -> Result<u8> {
         let mut mapped_addr = 0u64;
         match addr {
             0x8000..=0xbfff => {
@@ -26,7 +26,7 @@ impl Mapper for Uxrom {
         Ok(nes.cartridge.prgmem[mapped_addr as usize])
     }
 
-    fn write_prg(&mut self, _nes: &mut Nes, addr: u16, data: u8) -> Result<()> {
+    fn write_prg(&mut self, _nes: &mut Nes<S, A>, addr: u16, data: u8) -> Result<()> {
         match addr {
             0x8000..=0xffff => {
                 self.banksel = data & 0x0f;
@@ -36,11 +36,11 @@ impl Mapper for Uxrom {
         }
     }
 
-    fn read_chr(&mut self, nes: &mut Nes, addr: u16) -> Result<u8> {
+    fn read_chr(&mut self, nes: &mut Nes<S, A>, addr: u16) -> Result<u8> {
         Ok(nes.cartridge.chrmem[addr as usize])
     }
 
-    fn write_chr(&mut self, nes: &mut Nes, addr: u16, data: u8) -> Result<()> {
+    fn write_chr(&mut self, nes: &mut Nes<S, A>, addr: u16, data: u8) -> Result<()> {
         nes.cartridge.chrmem[addr as usize] = data;
         Ok(())
     }
