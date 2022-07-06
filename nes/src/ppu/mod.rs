@@ -296,7 +296,8 @@ where
                     1 | 2 | 3 => read(nes, 0x3f00 + palette_start as u16 + pixel as u16)?,
                     _ => 0,
                 };
-                let rgb = PALETTE_TO_RGB[palette_idx as usize];
+                let mut rgb = PALETTE_TO_RGB[palette_idx as usize];
+                emphasis(&nes.ppu.reg_mask, &mut rgb);
                 nes.screen.draw_pixel(
                     (tile_col * 8 + (7 - col)) as u8,
                     (tile_row * 8 + row) as u8,
@@ -336,7 +337,8 @@ where
                 }
 
                 let pal_pixel_id = 0x11 + palette_id * 4 + value - 1;
-                let rgb = PALETTE_TO_RGB[read(nes, 0x3f00 + pal_pixel_id as u16)? as usize];
+                let mut rgb = PALETTE_TO_RGB[read(nes, 0x3f00 + pal_pixel_id as u16)? as usize];
+                emphasis(&nes.ppu.reg_mask, &mut rgb);
 
                 let (pixel_x, pixel_y) = match (flip_h, flip_v) {
                     (false, false) => (tile_x.wrapping_add(x), tile_y.wrapping_add(y as u8)),
@@ -352,6 +354,24 @@ where
         }
     }
     Ok(())
+}
+
+pub fn emphasis(rmask: &RegMask, rgb: &mut (u8, u8, u8)) {
+    if rmask.emphasis_r() {
+        rgb.2 = (1.1 * (rgb.2 as f32)) as u8;
+        rgb.1 = (0.9 * (rgb.1 as f32)) as u8;
+        rgb.0 = (0.9 * (rgb.0 as f32)) as u8;
+    }
+    if rmask.emphasis_g() {
+        rgb.2 = (0.9 * (rgb.2 as f32)) as u8;
+        rgb.1 = (1.1 * (rgb.1 as f32)) as u8;
+        rgb.0 = (0.9 * (rgb.0 as f32)) as u8;
+    }
+    if rmask.emphasis_b() {
+        rgb.2 = (0.9 * (rgb.2 as f32)) as u8;
+        rgb.1 = (0.9 * (rgb.1 as f32)) as u8;
+        rgb.0 = (1.1 * (rgb.0 as f32)) as u8;
+    }
 }
 
 pub fn draw_chr<S, A>(nes: &mut Nes<S, A>, bank: u16, dbg_screen: &mut impl NesScreen) -> Result<()>
@@ -370,7 +390,8 @@ where
                     tile_lsb >>= 1;
                     tile_msb >>= 1;
 
-                    let rgb = PALETTE_TO_RGB[read(nes, 0x3f00 + pixel as u16)? as usize];
+                    let mut rgb = PALETTE_TO_RGB[read(nes, 0x3f00 + pixel as u16)? as usize];
+                    emphasis(&nes.ppu.reg_mask, &mut rgb);
                     dbg_screen.draw_pixel(
                         (tile_y * 8 + (7 - col)) as u8,
                         (tile_x * 8 + row) as u8,
@@ -433,7 +454,8 @@ where
                     1 | 2 | 3 => read(nes, 0x3f00 + palette_start as u16 + pixel as u16)?,
                     _ => 0,
                 };
-                let rgb = PALETTE_TO_RGB[palette_idx as usize];
+                let mut rgb = PALETTE_TO_RGB[palette_idx as usize];
+                emphasis(&nes.ppu.reg_mask, &mut rgb);
                 dbg_screen.draw_pixel(
                     (tile_col * 8 + (7 - col)) as u8,
                     (tile_row * 8 + row) as u8,
@@ -451,11 +473,9 @@ where
     A: NesAudio,
 {
     for i in 0..32 {
-        dbg_screen.draw_pixel(
-            i % 16,
-            i / 16,
-            PALETTE_TO_RGB[read(nes, 0x3f00 + i as u16)? as usize],
-        )?;
+        let mut rgb = PALETTE_TO_RGB[read(nes, 0x3f00 + i as u16)? as usize];
+        emphasis(&nes.ppu.reg_mask, &mut rgb);
+        dbg_screen.draw_pixel(i % 16, i / 16, rgb)?;
     }
     Ok(())
 }

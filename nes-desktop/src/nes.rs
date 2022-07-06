@@ -1,10 +1,10 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 
+use ::nes::joypad::Button;
 use anyhow::Result;
 use minifb::Key;
 use minifb::Window;
-use nes::joypad::Button;
 
 use crate::audio::NesAudio;
 use crate::dbg::chrscreen::ChrScreen;
@@ -16,9 +16,9 @@ use crate::screen::NesScreen;
 pub struct Nes {
     nes: ::nes::Nes<NesScreen, NesAudio>,
     window: Rc<RefCell<Window>>,
-    dbg_chr: [ChrScreen; 2],
-    dbg_vram: [VramScreen; 4],
-    dbg_palette: PaletteScreen,
+    dbg_chr: Option<[ChrScreen; 2]>,
+    dbg_vram: Option<[VramScreen; 4]>,
+    dbg_palette: Option<PaletteScreen>,
     clock: u16,
 }
 
@@ -26,14 +26,19 @@ impl Nes {
     pub fn new(window: Rc<RefCell<Window>>) -> Result<Self> {
         window.try_borrow_mut()?.set_position(20, 20);
 
-        let dbg_chr = [ChrScreen::new(true)?, ChrScreen::new(false)?];
-        let dbg_vram = [
-            VramScreen::new(Corner::TopLeft)?,
-            VramScreen::new(Corner::TopRight)?,
-            VramScreen::new(Corner::BottomLeft)?,
-            VramScreen::new(Corner::BottomRight)?,
-        ];
-        let dbg_palette = PaletteScreen::new()?;
+        let (dbg_chr, dbg_vram, dbg_palette) = if cfg!(feature = "screens") {
+            let dbg_chr = Some([ChrScreen::new(true)?, ChrScreen::new(false)?]);
+            let dbg_vram = Some([
+                VramScreen::new(Corner::TopLeft)?,
+                VramScreen::new(Corner::TopRight)?,
+                VramScreen::new(Corner::BottomLeft)?,
+                VramScreen::new(Corner::BottomRight)?,
+            ]);
+            let dbg_palette = Some(PaletteScreen::new()?);
+            (dbg_chr, dbg_vram, dbg_palette)
+        } else {
+            (None, None, None)
+        };
 
         Ok(Self {
             nes: ::nes::Nes::new(NesScreen::new(window.clone()), NesAudio::default()),
@@ -46,26 +51,21 @@ impl Nes {
     }
 
     pub fn clock(&mut self) -> Result<()> {
-        self.nes.clock()
-    }
-
-    pub fn step(&mut self) -> Result<()> {
-        let inst = self.nes.step()?;
-        log::info!("{inst}");
-        Ok(())
-    }
-
-    pub fn clock_dbg(&mut self) -> Result<()> {
-        self.nes.clock()?;
+        if cfg!(feature = "step") {
+            let inst = self.nes.step()?;
+            log::info!("{inst}");
+        } else {
+            self.nes.clock()?;
+        }
         self.clock = self.clock.wrapping_add(1);
-        if self.clock == 0 {
-            ::nes::ppu::draw_chr(&mut self.nes, 0, &mut self.dbg_chr[0])?;
-            ::nes::ppu::draw_chr(&mut self.nes, 1, &mut self.dbg_chr[1])?;
-            ::nes::ppu::draw_vram(&mut self.nes, 0, &mut self.dbg_vram[0])?;
-            ::nes::ppu::draw_vram(&mut self.nes, 1, &mut self.dbg_vram[1])?;
-            ::nes::ppu::draw_vram(&mut self.nes, 2, &mut self.dbg_vram[2])?;
-            ::nes::ppu::draw_vram(&mut self.nes, 3, &mut self.dbg_vram[3])?;
-            ::nes::ppu::draw_palette(&mut self.nes, &mut self.dbg_palette)?;
+        if self.clock == 0 && cfg!(feature = "screens") {
+            ::nes::ppu::draw_chr(&mut self.nes, 0, &mut self.dbg_chr.as_mut().unwrap()[0])?;
+            ::nes::ppu::draw_chr(&mut self.nes, 1, &mut self.dbg_chr.as_mut().unwrap()[1])?;
+            ::nes::ppu::draw_vram(&mut self.nes, 0, &mut self.dbg_vram.as_mut().unwrap()[0])?;
+            ::nes::ppu::draw_vram(&mut self.nes, 1, &mut self.dbg_vram.as_mut().unwrap()[1])?;
+            ::nes::ppu::draw_vram(&mut self.nes, 2, &mut self.dbg_vram.as_mut().unwrap()[2])?;
+            ::nes::ppu::draw_vram(&mut self.nes, 3, &mut self.dbg_vram.as_mut().unwrap()[3])?;
+            ::nes::ppu::draw_palette(&mut self.nes, self.dbg_palette.as_mut().unwrap())?;
         }
         Ok(())
     }
@@ -109,12 +109,12 @@ impl Nes {
             } else {
                 self.nes.release_btn(Button::BTN_B, true)?;
             }
-            if window.is_key_down(Key::Z) {
+            if window.is_key_down(Key::Enter) {
                 self.nes.press_btn(Button::START, true)?;
             } else {
                 self.nes.release_btn(Button::START, true)?;
             }
-            if window.is_key_down(Key::X) {
+            if window.is_key_down(Key::Space) {
                 self.nes.press_btn(Button::SELECT, true)?;
             } else {
                 self.nes.release_btn(Button::SELECT, true)?;

@@ -64,6 +64,22 @@ impl RegMask {
     pub fn update(&mut self, data: u8) {
         self.bits = data;
     }
+
+    pub fn grayscale(&self) -> bool {
+        self.contains(RegMask::Gr)
+    }
+
+    pub fn emphasis_r(&self) -> bool {
+        self.contains(RegMask::R)
+    }
+
+    pub fn emphasis_g(&self) -> bool {
+        self.contains(RegMask::G)
+    }
+
+    pub fn emphasis_b(&self) -> bool {
+        self.contains(RegMask::B)
+    }
     /*
     pub fn render_bg_enabled(&self) -> bool {
         // TODO: change later

@@ -27,12 +27,18 @@ pub fn read<S, A>(nes: &mut Nes<S, A>, addr: u16) -> Result<u8> {
             Ok(nes.bus_ppu.vram[mapped_addr as usize])
         }
         0x3f10 | 0x3f14 | 0x3f18 | 0x3f1c => {
-            let add_mirror = addr - 0x10;
-            Ok(nes.bus_ppu.palette[(add_mirror - 0x3f00) as usize])
+            let mut addr_mirror = addr - 0x10 - 0x3f00;
+            if nes.ppu.reg_mask.grayscale() {
+                addr_mirror &= 0x30;
+            }
+            Ok(nes.bus_ppu.palette[addr_mirror as usize])
         }
         0x3f00..=0x3fff => {
-            let addr_mirror = addr & 0x3f1f;
-            Ok(nes.bus_ppu.palette[(addr_mirror - 0x3f00) as usize])
+            let mut addr_mirror = (addr & 0x3f1f) - 0x3f00;
+            if nes.ppu.reg_mask.grayscale() {
+                addr_mirror &= 0x30;
+            }
+            Ok(nes.bus_ppu.palette[addr_mirror as usize])
         }
         _ => Err(anyhow!("Invalid read on ppu bus at address {:x}", addr)),
     }
