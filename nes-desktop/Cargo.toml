@@ -16,6 +16,5 @@ nes = { path = "../nes" }
 web-audio-api = "0.20.0"
 
 [features]
-default = [ "screens" ]
 screens = []
 step = []

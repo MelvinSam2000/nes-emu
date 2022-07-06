@@ -28,10 +28,10 @@ impl<S, A> Mapper<S, A> for Cnrom {
         match addr {
             0x8000..=0xffff => {
                 self.banksel = (data & 0x03) as u8;
-                Ok(())
             }
-            _ => Err(anyhow!("Cannot write at PRG address {:#x} for CNROM", addr)),
+            _ => log::warn!("Cannot write at PRG address {:#x} for CNROM", addr),
         }
+        Ok(())
     }
 
     fn read_chr(&mut self, nes: &mut Nes<S, A>, addr: u16) -> Result<u8> {

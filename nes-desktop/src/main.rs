@@ -10,8 +10,8 @@ use minifb::WindowOptions;
 
 use crate::nes::Nes;
 
-const WIDTH: usize = 240;
-const HEIGHT: usize = 256;
+const WIDTH: usize = 256;
+const HEIGHT: usize = 240;
 
 fn main() -> Result<()> {
     env_logger::init_from_env(env_logger::Env::default().default_filter_or("info"));

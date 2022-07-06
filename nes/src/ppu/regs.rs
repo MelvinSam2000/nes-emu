@@ -37,6 +37,10 @@ impl RegControl {
     pub fn get_bg(&self) -> bool {
         self.contains(RegControl::B)
     }
+
+    pub fn get_spr(&self) -> bool {
+        self.contains(RegControl::S)
+    }
 }
 
 bitflags! {

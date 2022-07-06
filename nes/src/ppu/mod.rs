@@ -283,7 +283,7 @@ where
     S: NesScreen,
     A: NesAudio,
 {
-    let chr_bank = nes.ppu.reg_control.get_bg() as u16;
+    let chr_bank = (nes.ppu.reg_control.get_bg() as u16) * 0x1000;
     // First nametable
     for i in 0x2000..=0x23bf {
         // get tile ID from vram
@@ -305,8 +305,8 @@ where
 
         // Draw tile
         for row in 0..8 {
-            let mut tile_lsb = read(nes, chr_bank * 0x1000 + (tile as u16) * 16 + row)?;
-            let mut tile_msb = read(nes, chr_bank * 0x1000 + (tile as u16) * 16 + row + 8)?;
+            let mut tile_lsb = read(nes, chr_bank + (tile as u16) * 16 + row)?;
+            let mut tile_msb = read(nes, chr_bank + (tile as u16) * 16 + row + 8)?;
             for col in 0..8 {
                 let pixel = ((tile_msb & 0x01) << 1) | (tile_lsb & 0x01);
                 tile_lsb >>= 1;
@@ -344,9 +344,11 @@ where
         let flip_h = tile_attr >> 6 & 1 == 1;
         let palette_id = tile_attr & 0b11;
 
+        let chr_bank = (nes.ppu.reg_control.get_spr() as u16) * 0x1000;
+
         for y in 0..=7 {
-            let mut upper = read(nes, tile_id * 16 + y)?;
-            let mut lower = read(nes, tile_id * 16 + y + 8)?;
+            let mut upper = read(nes, chr_bank + tile_id * 16 + y)?;
+            let mut lower = read(nes, chr_bank + tile_id * 16 + y + 8)?;
             for x in (0..=7).rev() {
                 let value = (1 & lower) << 1 | (1 & upper);
                 upper >>= 1;
