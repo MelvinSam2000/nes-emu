@@ -128,6 +128,10 @@ const PPUADDR: u16 = 0x2006;
 const PPUDATA: u16 = 0x2007;
 const OAMDMA: u16 = 0x4014;
 
+/*
+    MAIN PPU CLOCK
+*/
+
 pub fn clock<S, A>(nes: &mut Nes<S, A>) -> Result<()>
 where
     S: NesScreen,
@@ -136,6 +140,7 @@ where
     // Enter VBLANK
     if nes.ppu.scan_line == 241 && nes.ppu.scan_cycle == 1 {
         nes.ppu.reg_status.set_vblank(true);
+        nes.ppu.reg_status.set_sprite_0_hit(false);
         render_background(nes)?;
         render_sprites(nes)?;
         nes.screen.vblank()?;
@@ -146,20 +151,31 @@ where
 
     nes.ppu.scan_cycle += 1;
     if nes.ppu.scan_cycle >= 341 {
+        if is_sprite_0_hit(&nes.ppu, nes.ppu.scan_cycle) {
+            nes.ppu.reg_status.set_sprite_0_hit(true);
+        }
+
         nes.ppu.scan_cycle = 0;
         nes.ppu.scan_line += 1;
         if nes.ppu.scan_line >= 261 {
             nes.ppu.scan_line = -1;
+            nes.ppu.reg_status.set_sprite_0_hit(false);
+            nes.ppu.reg_status.set_vblank(false);
         }
     }
     Ok(())
 }
 
+/*
+    PPU BUS FUNCTIONS
+*/
+
 pub fn read_ppu_reg<S, A>(nes: &mut Nes<S, A>, addr: u16) -> Result<u8> {
     match addr {
         PPUCTRL | PPUMASK | PPUSCROLL | PPUADDR | OAMADDR | OAMDMA => {
             // these registers are write only
-            Err(anyhow!("Ppu register at {:#x} is write only!", addr))
+            log::warn!("Ppu register at {:#x} is write only!", addr);
+            Ok(0)
         }
         PPUSTATUS => {
             let data = nes.ppu.reg_status.get_bits();
@@ -257,6 +273,10 @@ where
     }
     Ok(())
 }
+
+/*
+    RENDERING FUNCTIONS
+*/
 
 pub fn render_background<S, A>(nes: &mut Nes<S, A>) -> Result<()>
 where
@@ -356,6 +376,10 @@ where
     Ok(())
 }
 
+/*
+    UTILITY FUNCTIONS
+*/
+
 pub fn emphasis(rmask: &RegMask, rgb: &mut (u8, u8, u8)) {
     if rmask.emphasis_r() {
         rgb.2 = (1.1 * (rgb.2 as f32)) as u8;
@@ -373,6 +397,16 @@ pub fn emphasis(rmask: &RegMask, rgb: &mut (u8, u8, u8)) {
         rgb.0 = (1.1 * (rgb.0 as f32)) as u8;
     }
 }
+
+fn is_sprite_0_hit(ppu: &Ppu, cycle: u16) -> bool {
+    let y = ppu.oam[0] as usize;
+    let x = ppu.oam[3] as usize;
+    y == ppu.scan_line as usize && x <= cycle as usize && ppu.reg_mask.render_spr_enabled()
+}
+
+/*
+    DEBUG FUNCTIONS
+*/
 
 pub fn draw_chr<S, A>(nes: &mut Nes<S, A>, bank: u16, dbg_screen: &mut impl NesScreen) -> Result<()>
 where
@@ -437,7 +471,7 @@ where
             (1, 0) => (attr_byte >> 2) & 0b11,
             (0, 1) => (attr_byte >> 4) & 0b11,
             (1, 1) => (attr_byte >> 6) & 0b11,
-            (_, _) => 0,
+            (_, _) => Err(anyhow!("Invalid palette index..."))?,
         };
         let palette_start = 4 * palette_idx;
 

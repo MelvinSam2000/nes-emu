@@ -80,14 +80,17 @@ impl RegMask {
     pub fn emphasis_b(&self) -> bool {
         self.contains(RegMask::B)
     }
+
+    pub fn render_spr_enabled(&self) -> bool {
+        self.contains(RegMask::s)
+    }
+
     /*
     pub fn render_bg_enabled(&self) -> bool {
         // TODO: change later
         return true;//self.get_flag(Flag::b);
     }
-    pub fn render_spr_enabled(&self) -> bool {
-        return self.get_flag(Flag::s);
-    }
+
     pub fn get_color_emphasis(&self) -> (bool, bool, bool) {
         return (
             self.get_flag(Flag::R),
@@ -133,6 +136,10 @@ impl RegStatus {
 
     pub fn set_vblank(&mut self, val: bool) {
         self.set(RegStatus::V, val);
+    }
+
+    pub fn set_sprite_0_hit(&mut self, val: bool) {
+        self.set(RegStatus::S, val);
     }
 }
 

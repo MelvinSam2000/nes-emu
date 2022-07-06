@@ -42,8 +42,10 @@ impl<S, A> Default for Cartridge<S, A> {
 }
 
 pub fn load_cartridge<S, A>(nes: &mut Nes<S, A>, rom_bytes: &[u8]) -> Result<()> {
-    if rom_bytes.len() < 0xf {
-        return Err(anyhow!("Input ROM too small!"));
+    if &rom_bytes[0..3] != b"NES" {
+        Err(anyhow!(
+            "Invalid NES ROM was provided: Missing magic NES header"
+        ))?;
     }
 
     // read file header
@@ -55,7 +57,7 @@ pub fn load_cartridge<S, A>(nes: &mut Nes<S, A>, rom_bytes: &[u8]) -> Result<()>
     let prg_size = 0x4000 * prg_banks as u64;
     let chr_size = 0x2000 * chr_banks as u64;
 
-    nes.cartridge.mirroring = if mirroring {
+    nes.cartridge.mirroring = if !mirroring {
         Mirroring::HORIZONTAL
     } else {
         Mirroring::VERTICAL
@@ -70,6 +72,8 @@ pub fn load_cartridge<S, A>(nes: &mut Nes<S, A>, rom_bytes: &[u8]) -> Result<()>
     if chr_size == 0 {
         nes.cartridge.chrmem.resize(0x2000, 0);
     }
+    log::info!("PRG banks: {}", prg_banks);
+    log::info!("CHR banks: {}", chr_banks);
 
     // choose mapper
     let mapper_id = (rom_bytes[0x7] & 0xf0) | ((rom_bytes[0x6] & 0xf0) >> 4);

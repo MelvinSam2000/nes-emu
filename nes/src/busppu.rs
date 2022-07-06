@@ -6,7 +6,7 @@ use crate::cartridge::Mirroring;
 use crate::Nes;
 
 pub struct BusPpu {
-    pub vram: [u8; 0x1000], // 1 KB of VRAM
+    pub vram: [u8; 0x1000], // 4 KB of VRAM
     pub palette: [u8; 0x20],
 }
 
@@ -27,14 +27,14 @@ pub fn read<S, A>(nes: &mut Nes<S, A>, addr: u16) -> Result<u8> {
             Ok(nes.bus_ppu.vram[mapped_addr as usize])
         }
         0x3f10 | 0x3f14 | 0x3f18 | 0x3f1c => {
-            let mut addr_mirror = addr - 0x10 - 0x3f00;
+            let mut addr_mirror = (addr - 0x10) & 0x3f;
             if nes.ppu.reg_mask.grayscale() {
                 addr_mirror &= 0x30;
             }
             Ok(nes.bus_ppu.palette[addr_mirror as usize])
         }
         0x3f00..=0x3fff => {
-            let mut addr_mirror = (addr & 0x3f1f) - 0x3f00;
+            let mut addr_mirror = (addr & 0x3f1f) & 0x3f;
             if nes.ppu.reg_mask.grayscale() {
                 addr_mirror &= 0x30;
             }

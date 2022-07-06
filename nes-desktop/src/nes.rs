@@ -53,7 +53,7 @@ impl Nes {
     pub fn clock(&mut self) -> Result<()> {
         if cfg!(feature = "step") {
             let inst = self.nes.step()?;
-            log::info!("{inst}");
+            println!("{inst}");
         } else {
             self.nes.clock()?;
         }
