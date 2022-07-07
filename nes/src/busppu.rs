@@ -61,9 +61,7 @@ pub fn write<S, A>(nes: &mut Nes<S, A>, addr: u16, data: u8) -> Result<()> {
             let addr_mirror = addr & 0x3f1f;
             nes.bus_ppu.palette[(addr_mirror - 0x3f00) as usize] = data;
         }
-        _ => {
-            Err(anyhow!("Invalid write on ppu bus at address {:x}", addr))?;
-        }
+        _ => log::warn!("Invalid write on ppu bus at address {:x}", addr),
     }
     Ok(())
 }

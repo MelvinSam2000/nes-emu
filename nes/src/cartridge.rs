@@ -6,6 +6,7 @@ use anyhow::Result;
 
 use crate::mappers::cnrom::Cnrom;
 use crate::mappers::gxrom::Gxrom;
+use crate::mappers::mmc1::Mmc1;
 use crate::mappers::nrom::Nrom;
 use crate::mappers::uxrom::Uxrom;
 use crate::mappers::Mapper;
@@ -79,7 +80,7 @@ pub fn load_cartridge<S, A>(nes: &mut Nes<S, A>, rom_bytes: &[u8]) -> Result<()>
     let mapper_id = (rom_bytes[0x7] & 0xf0) | ((rom_bytes[0x6] & 0xf0) >> 4);
     nes.cartridge.mapper = match mapper_id {
         0 => Rc::new(RefCell::new(Nrom)),
-        //1 => Mapper::MMC1(MMC1::new()),
+        1 => Rc::new(RefCell::new(Mmc1::new())),
         2 => Rc::new(RefCell::new(Uxrom::default())),
         3 => Rc::new(RefCell::new(Cnrom::default())),
         66 => Rc::new(RefCell::new(Gxrom::default())),

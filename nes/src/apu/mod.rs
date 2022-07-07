@@ -20,7 +20,8 @@ pub struct Apu {
 }
 
 pub fn read<S, A>(_nes: &mut Nes<S, A>, _addr: u16) -> Result<u8> {
-    Err(anyhow!("Cannot read anything from APU..."))
+    log::warn!("Cannot read anything from APU...");
+    Ok(0)
 }
 
 pub fn write<S, A>(nes: &mut Nes<S, A>, addr: u16, data: u8) -> Result<()>

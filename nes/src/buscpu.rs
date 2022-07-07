@@ -30,7 +30,10 @@ where
         0x4017 => Ok(nes.joypad.1.read()),
         0x4000..=0x4013 | 0x4015 => apu::read(nes, addr),
         0x4020..=0xffff => cartridge::prg_read(nes, addr),
-        _ => Err(anyhow!("Invalid read on cpu bus at address {:x}", addr)),
+        _ => {
+            log::warn!("Invalid read on cpu bus at address {:x}", addr);
+            Ok(0)
+        }
     }
 }
 
