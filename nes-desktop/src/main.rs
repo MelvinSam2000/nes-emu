@@ -29,6 +29,7 @@ fn main() -> Result<()> {
     )?));
 
     log::info!("Starting NES Emulator...");
+    log::debug!("Debug logs enabled...");
     let mut nes = Nes::new(window)?;
 
     let nes_rom_path = std::env::args().rev().collect::<Vec<String>>();

@@ -12,15 +12,15 @@ pub struct Cnrom {
 
 impl<S, A> Mapper<S, A> for Cnrom {
     fn read_prg(&mut self, nes: &mut Nes<S, A>, addr: u16) -> Result<u8> {
-        let mut mapped_addr = 0;
-        if 0x8000 <= addr {
-            if nes.cartridge.prg_banks == 2 {
-                mapped_addr = addr & 0x7fff;
+        let mapped_addr = if 0x8000 <= addr {
+            match nes.cartridge.prg_banks {
+                1 => addr & 0x3fff,
+                2 => addr & 0x7fff,
+                _ => 0,
             }
-            if nes.cartridge.prg_banks == 1 {
-                mapped_addr = addr & 0x3fff;
-            }
-        }
+        } else {
+            0
+        };
         Ok(nes.cartridge.prgmem[mapped_addr as usize])
     }
 
@@ -46,5 +46,14 @@ impl<S, A> Mapper<S, A> for Cnrom {
 
     fn write_chr(&mut self, _nes: &mut Nes<S, A>, addr: u16, _data: u8) -> Result<()> {
         Err(anyhow!("Cannot write at CHR address {:#x} for CNROM", addr))
+    }
+
+    fn reset(&mut self, _nes: &mut Nes<S, A>) -> Result<()> {
+        // Do nothing
+        Ok(())
+    }
+
+    fn name(&self) -> &'static str {
+        "CNROM"
     }
 }

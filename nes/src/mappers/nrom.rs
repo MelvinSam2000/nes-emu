@@ -8,28 +8,28 @@ pub struct Nrom;
 
 impl<S, A> Mapper<S, A> for Nrom {
     fn read_prg(&mut self, nes: &mut Nes<S, A>, addr: u16) -> Result<u8> {
-        let mut mapped_addr = 0;
-        if 0x8000 <= addr {
-            if nes.cartridge.prg_banks == 2 {
-                mapped_addr = addr & 0x7fff;
+        let mapped_addr = if 0x8000 <= addr {
+            match nes.cartridge.prg_banks {
+                1 => addr & 0x3fff,
+                2 => addr & 0x7fff,
+                _ => 0,
             }
-            if nes.cartridge.prg_banks == 1 {
-                mapped_addr = addr & 0x3fff;
-            }
-        }
+        } else {
+            0
+        };
         Ok(nes.cartridge.prgmem[mapped_addr as usize])
     }
 
     fn write_prg(&mut self, nes: &mut Nes<S, A>, addr: u16, data: u8) -> Result<()> {
-        let mut mapped_addr = 0;
-        if 0x8000 <= addr {
-            if nes.cartridge.prg_banks == 2 {
-                mapped_addr = addr & 0x7fff;
+        let mapped_addr = if 0x8000 <= addr {
+            match nes.cartridge.prg_banks {
+                1 => addr & 0x3fff,
+                2 => addr & 0x7fff,
+                _ => 0,
             }
-            if nes.cartridge.prg_banks == 1 {
-                mapped_addr = addr & 0x3fff;
-            }
-        }
+        } else {
+            0
+        };
         nes.cartridge.prgmem[mapped_addr as usize] = data;
         Ok(())
     }
@@ -41,5 +41,14 @@ impl<S, A> Mapper<S, A> for Nrom {
     fn write_chr(&mut self, nes: &mut Nes<S, A>, addr: u16, data: u8) -> Result<()> {
         nes.cartridge.chrmem[addr as usize] = data;
         Ok(())
+    }
+
+    fn reset(&mut self, _nes: &mut Nes<S, A>) -> Result<()> {
+        // Do nothing
+        Ok(())
+    }
+
+    fn name(&self) -> &'static str {
+        "NROM"
     }
 }

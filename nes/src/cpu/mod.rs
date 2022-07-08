@@ -74,7 +74,7 @@ where
         addr_mode,
         instruction,
         instruction_str: _,
-    } = decode::decode(opcode);
+    } = decode::decode(opcode)?;
     nes.cpu.cycles = cycles;
     // execute
     nes.cpu.addr_mode = addr_mode as usize;
@@ -215,7 +215,7 @@ where
     A: NesAudio,
 {
     let inst_pc = nes.cpu.pc;
-    let decoded = decode::decode::<S, A>(read(nes, inst_pc)?);
+    let decoded = decode::decode::<S, A>(read(nes, inst_pc)?)?;
 
     let (a, x, y, p, sp) = (nes.cpu.ac, nes.cpu.x, nes.cpu.y, nes.cpu.status, nes.cpu.sp);
 

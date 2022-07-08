@@ -121,7 +121,7 @@ where
             }
         }
         0x4001 | 0x4005 | 0x4009 | 0x400a..=0x401f => {
-            log::warn!("Writing address {:#x} of APU is ignored.", addr);
+            // log::warn!("Writing address {:#x} of APU is ignored.", addr);
         }
         _ => {
             Err(anyhow!("Cannot write addr {:#x} of APU", addr))?;

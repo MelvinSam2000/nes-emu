@@ -12,6 +12,8 @@ use crate::mappers::uxrom::Uxrom;
 use crate::mappers::Mapper;
 use crate::Nes;
 
+const NES_TAG: &[u8; 4] = b"NES\x1a";
+
 pub struct Cartridge<S, A> {
     pub prgmem: Vec<u8>,
     pub chrmem: Vec<u8>,
@@ -43,10 +45,13 @@ impl<S, A> Default for Cartridge<S, A> {
 }
 
 pub fn load_cartridge<S, A>(nes: &mut Nes<S, A>, rom_bytes: &[u8]) -> Result<()> {
-    if &rom_bytes[0..3] != b"NES" {
-        Err(anyhow!(
-            "Invalid NES ROM was provided: Missing magic NES header"
-        ))?;
+    if &rom_bytes[0..4] != NES_TAG {
+        Err(anyhow!("Invalid NES ROM was provided: Missing NES tag"))?;
+    }
+
+    let ines_ver = (rom_bytes[0x7] >> 2) & 0b11;
+    if ines_ver != 0 {
+        Err(anyhow!("NES2.0 format is not supported"))?;
     }
 
     // read file header
@@ -55,8 +60,8 @@ pub fn load_cartridge<S, A>(nes: &mut Nes<S, A>, rom_bytes: &[u8]) -> Result<()>
 
     let trainer_is_present = rom_bytes[0x6] & 0x04 != 0;
     let mirroring = rom_bytes[0x6] & 0x01 != 0;
-    let prg_size = 0x4000 * prg_banks as u64;
-    let chr_size = 0x2000 * chr_banks as u64;
+    let prg_size = 0x4000 * prg_banks as usize;
+    let mut chr_size = 0x2000 * chr_banks as usize;
 
     nes.cartridge.mirroring = if !mirroring {
         Mirroring::HORIZONTAL
@@ -68,10 +73,9 @@ pub fn load_cartridge<S, A>(nes: &mut Nes<S, A>, rom_bytes: &[u8]) -> Result<()>
     // resize cartridge roms
     nes.cartridge.prg_banks = prg_banks as u8;
     nes.cartridge.chr_banks = chr_banks as u8;
-    nes.cartridge.prgmem.resize(prg_size as usize, 0);
-    nes.cartridge.chrmem.resize(chr_size as usize, 0);
     if chr_size == 0 {
         nes.cartridge.chrmem.resize(0x2000, 0);
+        chr_size = 0x2000;
     }
     log::info!("PRG banks: {}", prg_banks);
     log::info!("CHR banks: {}", chr_banks);
@@ -86,38 +90,47 @@ pub fn load_cartridge<S, A>(nes: &mut Nes<S, A>, rom_bytes: &[u8]) -> Result<()>
         66 => Rc::new(RefCell::new(Gxrom::default())),
         _ => Err(anyhow!("Mapper {} not supported yet...", mapper_id))?,
     };
-    log::info!("Loaded Mapper {}", mapper_id);
+    log::info!(
+        "Loaded Mapper {}: {:?}",
+        mapper_id,
+        nes.cartridge.mapper.try_borrow()?.name()
+    );
 
     // fill memories
-    let mut offset = 16;
-    if trainer_is_present {
-        offset += 512;
-    }
-    for i in 0..prg_size as u64 {
-        nes.cartridge.prgmem[i as usize] = rom_bytes[(offset + i) as usize];
+    let prg_start = 16 + (trainer_is_present as usize) * 512;
+    let chr_start = prg_start + prg_size;
+    nes.cartridge.prgmem = rom_bytes[prg_start..(prg_start + prg_size)].to_vec();
+    if chr_banks == 0 {
+        nes.cartridge.chrmem = rom_bytes[chr_start..].to_vec();
+        nes.cartridge.chrmem.resize(0x2000, 0x00);
+    } else {
+        nes.cartridge.chrmem = rom_bytes[chr_start..(chr_start + chr_size)].to_vec();
     }
 
-    for i in 0..chr_size as u64 {
-        nes.cartridge.chrmem[i as usize] = rom_bytes[(prg_size + offset + i) as usize];
-    }
     Ok(())
+}
+
+pub fn reset<S, A>(nes: &mut Nes<S, A>) -> Result<()> {
+    let mapper = nes.cartridge.mapper.clone();
+    let mut mapper_ref = mapper.try_borrow_mut()?;
+    mapper_ref.reset(nes)
 }
 
 pub fn prg_read<S, A>(nes: &mut Nes<S, A>, addr: u16) -> Result<u8> {
     let mapper = nes.cartridge.mapper.clone();
-    let mut mapper_ref = mapper.borrow_mut();
+    let mut mapper_ref = mapper.try_borrow_mut()?;
     mapper_ref.read_prg(nes, addr)
 }
 
 pub fn prg_write<S, A>(nes: &mut Nes<S, A>, addr: u16, data: u8) -> Result<()> {
     let mapper = nes.cartridge.mapper.clone();
-    let mut mapper_ref = mapper.borrow_mut();
+    let mut mapper_ref = mapper.try_borrow_mut()?;
     mapper_ref.write_prg(nes, addr, data)
 }
 
 pub fn chr_read<S, A>(nes: &mut Nes<S, A>, addr: u16) -> Result<u8> {
     let mapper = nes.cartridge.mapper.clone();
-    let mut mapper_ref = mapper.borrow_mut();
+    let mut mapper_ref = mapper.try_borrow_mut()?;
     mapper_ref.read_chr(nes, addr)
 }
 

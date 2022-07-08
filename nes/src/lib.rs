@@ -43,7 +43,8 @@ where
     }
 
     pub fn reset(&mut self) -> Result<()> {
-        cpu::reset(self)
+        cpu::reset(self)?;
+        cartridge::reset(self)
     }
 
     pub fn clock(&mut self) -> Result<()> {

@@ -44,4 +44,13 @@ impl<S, A> Mapper<S, A> for Gxrom {
     fn write_chr(&mut self, _nes: &mut Nes<S, A>, addr: u16, _data: u8) -> Result<()> {
         Err(anyhow!("Cannot write at CHR address {:#x} for GXROM", addr))
     }
+
+    fn reset(&mut self, _nes: &mut Nes<S, A>) -> Result<()> {
+        // Do nothing
+        Ok(())
+    }
+
+    fn name(&self) -> &'static str {
+        "GxROM"
+    }
 }
