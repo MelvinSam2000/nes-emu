@@ -79,6 +79,13 @@ pub fn mirror_vram_addr<S, A>(nes: &mut Nes<S, A>, addr: u16) -> u16 {
                 mapped_addr -= 0x0800;
             }
         }
+        Mirroring::ONESCREEN_NT0 => {
+            mapped_addr &= 0x3ff;
+        }
+        Mirroring::ONESCREEN_NT1 => {
+            mapped_addr &= 0x3ff;
+            mapped_addr += 0x400;
+        }
     }
     mapped_addr
 }

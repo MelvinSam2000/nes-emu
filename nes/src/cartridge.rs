@@ -23,12 +23,13 @@ pub struct Cartridge<S, A> {
     pub mirroring: Mirroring,
 }
 
+#[allow(non_camel_case_types)]
 #[derive(Debug)]
 pub enum Mirroring {
     HORIZONTAL,
     VERTICAL,
-    //ONESCREEN_LO,
-    //ONESCREEN_HI,
+    ONESCREEN_NT0,
+    ONESCREEN_NT1,
 }
 
 impl<S, A> Default for Cartridge<S, A> {

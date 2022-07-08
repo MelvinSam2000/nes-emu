@@ -29,8 +29,8 @@ impl RegControl {
 
     pub fn mirroring(&self) -> Mirroring {
         match self.bits & 0b00011 {
-            //0 => Mirroring::ONESCREEN_LO,
-            //1 => Mirroring::ONESCREEN_HI,
+            0 => Mirroring::ONESCREEN_NT0,
+            1 => Mirroring::ONESCREEN_NT1,
             2 => Mirroring::VERTICAL,
             3 => Mirroring::HORIZONTAL,
             _ => panic!("Mirroring not available for MMC1 yet..."),
@@ -129,6 +129,7 @@ impl<S, A> Mapper<S, A> for Mmc1 {
                             0x8000..=0x9fff => {
                                 self.reg_control.update(self.reg_load & 0x1f);
                                 nes.cartridge.mirroring = self.reg_control.mirroring();
+                                log::info!("Switched mirroring to: {:?}", nes.cartridge.mirroring);
                             }
                             0xa000..=0xbfff => {
                                 if self.reg_control.chr_bank_mode() {
