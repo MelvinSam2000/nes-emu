@@ -139,7 +139,7 @@ impl Nes {
 
     pub fn poll_command(&mut self) -> Result<()> {
         if let Ok(msg) = self.command_recv.try_recv() {
-            match commands::parse(&msg[..msg.len()-1]) {
+            match commands::parse(&msg[..msg.len() - 1]) {
                 Ok(cmd) => commands::exec(cmd, &mut self.nes)?,
                 Err(err) => log::error!("{:?}", err),
             }
