@@ -13,6 +13,7 @@ env_logger = "0.9.0"
 log = { version = "0.4.17", features = ["release_max_level_debug"] }
 minifb = "0.23.0"
 nes = { path = "../nes" }
+regex = "1.6.0"
 web-audio-api = "0.20.0"
 
 [features]

@@ -12,15 +12,15 @@ use crate::nesscreen::NesScreen;
 use crate::ppu::Ppu;
 
 pub struct Nes<S, A> {
-    cpu: Cpu,
-    ppu: Ppu,
-    apu: Apu,
-    bus_cpu: BusCpu,
-    bus_ppu: BusPpu,
-    cartridge: Cartridge<S, A>,
-    joypad: (Joypad, Joypad),
-    screen: S,
-    audio: A,
+    pub cpu: Cpu,
+    pub ppu: Ppu,
+    pub apu: Apu,
+    pub bus_cpu: BusCpu,
+    pub bus_ppu: BusPpu,
+    pub cartridge: Cartridge<S, A>,
+    pub joypad: (Joypad, Joypad),
+    pub screen: S,
+    pub audio: A,
 }
 
 impl<S, A> Nes<S, A>

@@ -1,5 +1,8 @@
 use std::cell::RefCell;
 use std::rc::Rc;
+use std::sync::mpsc;
+use std::sync::mpsc::Receiver;
+use std::thread;
 
 use ::nes::joypad::Button;
 use anyhow::Result;
@@ -7,6 +10,7 @@ use minifb::Key;
 use minifb::Window;
 
 use crate::audio::NesAudio;
+use crate::commands;
 use crate::dbg::chrscreen::ChrScreen;
 use crate::dbg::palettescreen::PaletteScreen;
 use crate::dbg::vramscreen::Corner;
@@ -20,6 +24,7 @@ pub struct Nes {
     dbg_vram: Option<[VramScreen; 4]>,
     dbg_palette: Option<PaletteScreen>,
     clock: u16,
+    command_recv: Receiver<String>,
 }
 
 impl Nes {
@@ -40,6 +45,14 @@ impl Nes {
             (None, None, None)
         };
 
+        // Spawn command thread
+        let (tx, rx) = mpsc::channel();
+        thread::spawn(move || loop {
+            let mut buffer = String::new();
+            std::io::stdin().read_line(&mut buffer).unwrap();
+            tx.send(buffer).unwrap();
+        });
+
         Ok(Self {
             nes: ::nes::Nes::new(NesScreen::new(window.clone()), NesAudio::default()),
             window,
@@ -47,6 +60,7 @@ impl Nes {
             dbg_vram,
             dbg_palette,
             clock: 0,
+            command_recv: rx,
         })
     }
 
@@ -118,6 +132,16 @@ impl Nes {
                 self.nes.press_btn(Button::SELECT, true)?;
             } else {
                 self.nes.release_btn(Button::SELECT, true)?;
+            }
+        }
+        Ok(())
+    }
+
+    pub fn poll_command(&mut self) -> Result<()> {
+        if let Ok(msg) = self.command_recv.try_recv() {
+            match commands::parse(&msg[..msg.len()-1]) {
+                Ok(cmd) => commands::exec(cmd, &mut self.nes)?,
+                Err(err) => log::error!("{:?}", err),
             }
         }
         Ok(())

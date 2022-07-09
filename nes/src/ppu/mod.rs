@@ -340,8 +340,13 @@ where
         let tile_y = nes.ppu.oam[i];
         let tile_attr = nes.ppu.oam[i + 2];
 
-        let flip_v = tile_attr >> 7 & 1 == 1;
-        let flip_h = tile_attr >> 6 & 1 == 1;
+        let hidden = tile_attr >> 5 & 1 != 0;
+        if hidden {
+            continue;
+        }
+
+        let flip_v = tile_attr >> 7 & 1 != 0;
+        let flip_h = tile_attr >> 6 & 1 != 0;
         let palette_id = tile_attr & 0b11;
 
         let chr_bank = (nes.ppu.reg_control.get_spr() as u16) * 0x1000;
@@ -368,7 +373,6 @@ where
                     (false, true) => (tile_x.wrapping_add(x), tile_y.wrapping_add(7 - y as u8)),
                     (true, true) => (tile_x.wrapping_add(7 - x), tile_y.wrapping_add(7 - y as u8)),
                 };
-
                 if pixel_y < 240 {
                     nes.screen.draw_pixel(pixel_x, pixel_y, rgb)?;
                 }

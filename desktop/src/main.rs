@@ -41,6 +41,7 @@ fn main() -> Result<()> {
     log::info!("Loaded game {:?}", &nes_rom_path);
 
     loop {
+        nes.poll_command()?;
         nes.poll_key_press()?;
         if let Err(err) = nes.clock() {
             log::error!("Game crahed due to err: {}", err);
@@ -51,6 +52,7 @@ fn main() -> Result<()> {
 }
 
 pub mod audio;
+pub mod commands;
 pub mod dbg;
 pub mod nes;
 pub mod screen;
