@@ -41,6 +41,10 @@ impl RegControl {
     pub fn get_spr(&self) -> bool {
         self.contains(RegControl::S)
     }
+
+    pub fn spr_height_16(&self) -> bool {
+        self.contains(RegControl::H)
+    }
 }
 
 bitflags! {

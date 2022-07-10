@@ -9,10 +9,12 @@ use nes::busppu;
 use nes::cpu::Cpu;
 use nes::ppu::Ppu;
 use regex::Regex;
+use rs6502::Disassembler;
 
 #[derive(Debug)]
 pub enum Command {
     CpuRegs,
+    Disassemble(u16, u16),
     CpuMemory(u16, u16),
     PpuMemory(u16, u16),
     PpuOam,
@@ -21,6 +23,17 @@ pub enum Command {
 pub fn parse(s: &str) -> Result<Command> {
     if Regex::new(r"^cpu\n?$")?.is_match(s) {
         Ok(Command::CpuRegs)
+    } else if Regex::new(r"^dasm [a-fA-F\d]{1,4} [a-fA-F\d]{1,4}\n?$")?.is_match(s) {
+        let args = s.split(' ').collect::<Vec<&str>>();
+        let addr_start = args
+            .get(1)
+            .map(|addr| u16::from_str_radix(addr, 16))
+            .context("Invalid dasm args")??;
+        let addr_end = args
+            .get(2)
+            .map(|addr| u16::from_str_radix(addr, 16))
+            .context("Invalid dasm args")??;
+        Ok(Command::Disassemble(addr_start, addr_end))
     } else if Regex::new(r"^cpumem [a-fA-F\d]{1,4} [a-fA-F\d]{1,4}\n?$")?.is_match(s) {
         let args = s.split(' ').collect::<Vec<&str>>();
         let addr_start = args
@@ -37,11 +50,11 @@ pub fn parse(s: &str) -> Result<Command> {
         let addr_start = args
             .get(1)
             .map(|addr| u16::from_str_radix(addr, 16))
-            .context("Invalid cpumem args")??;
+            .context("Invalid ppumem args")??;
         let addr_end = args
             .get(2)
             .map(|addr| u16::from_str_radix(addr, 16))
-            .context("Invalid cpumem args")??;
+            .context("Invalid ppumem args")??;
         Ok(Command::PpuMemory(addr_start, addr_end))
     } else if Regex::new(r"^oam\n?$")?.is_match(s) {
         Ok(Command::PpuOam)
@@ -58,6 +71,7 @@ where
     println!("EXEC... {:#x?}", &cmd);
     match cmd {
         Command::CpuRegs => cpuregs(&nes.cpu),
+        Command::Disassemble(addr_start, addr_end) => disassemble(addr_start, addr_end, nes)?,
         Command::CpuMemory(addr_start, addr_end) => cpumem(addr_start, addr_end, nes),
         Command::PpuMemory(addr_start, addr_end) => ppumem(addr_start, addr_end, nes),
         Command::PpuOam => oam(&nes.ppu),
@@ -71,6 +85,19 @@ fn cpuregs(cpu: &Cpu) {
         "A: {:#02x} X: {:#02x} Y: {:#02x} PC: {:#04x} SP: {:#02x} ",
         cpu.ac, cpu.x, cpu.y, cpu.pc, cpu.sp
     );
+}
+
+// Disassemble
+fn disassemble<S, A>(addr_start: u16, addr_end: u16, nes: &mut Nes<S, A>) -> Result<()>
+where
+    S: NesScreen,
+    A: NesAudio,
+{
+    let dasm = Disassembler::with_offset(addr_start);
+    let code = (addr_start..addr_end).map(|addr| buscpu::read(nes, addr)).collect::<Result<Vec<u8>>>()?;
+    let asm = dasm.disassemble(&code);
+    println!("{}", asm);
+    Ok(())
 }
 
 // Print raw memory as seen by the CPU bus

@@ -299,7 +299,7 @@ where
             (1, 0) => (attr_byte >> 2) & 0b11,
             (0, 1) => (attr_byte >> 4) & 0b11,
             (1, 1) => (attr_byte >> 6) & 0b11,
-            (_, _) => 0,
+            (_, _) => unreachable!(),
         };
         let palette_start = 4 * palette_idx;
 
@@ -335,48 +335,64 @@ where
     A: NesAudio,
 {
     for i in (0..256).step_by(4).rev() {
-        let tile_id = nes.ppu.oam[i + 1] as u16;
+        let tile_id = nes.ppu.oam[i + 1];
         let tile_x = nes.ppu.oam[i + 3];
         let tile_y = nes.ppu.oam[i];
         let tile_attr = nes.ppu.oam[i + 2];
-
-        let hidden = tile_attr >> 5 & 1 != 0;
-        if hidden {
-            continue;
-        }
 
         let flip_v = tile_attr >> 7 & 1 != 0;
         let flip_h = tile_attr >> 6 & 1 != 0;
         let palette_id = tile_attr & 0b11;
 
-        let chr_bank = (nes.ppu.reg_control.get_spr() as u16) * 0x1000;
+        let spr_height_16 = nes.ppu.reg_control.spr_height_16();
+        let spr_height_8_offset = (nes.ppu.reg_control.get_spr() as u16) * 0x1000;
 
-        for y in 0..=7 {
-            let mut upper = read(nes, chr_bank + tile_id * 16 + y)?;
-            let mut lower = read(nes, chr_bank + tile_id * 16 + y + 8)?;
-            for x in (0..=7).rev() {
-                let value = (1 & lower) << 1 | (1 & upper);
-                upper >>= 1;
-                lower >>= 1;
+        let mut render_sprite = |tile: u16, tile_y: u8| -> Result<()> {
+            for y in 0..=7 {
+                let mut upper = read(nes, tile + y as u16)?;
+                let mut lower = read(nes, tile + y as u16 + 8)?;
+                for x in (0..=7).rev() {
+                    let value = (1 & lower) << 1 | (1 & upper);
+                    upper >>= 1;
+                    lower >>= 1;
 
-                if value == 0 {
-                    continue;
-                }
+                    if value == 0 {
+                        continue;
+                    }
 
-                let pal_pixel_id = 0x11 + palette_id * 4 + value - 1;
-                let mut rgb = PALETTE_TO_RGB[read(nes, 0x3f00 + pal_pixel_id as u16)? as usize];
-                emphasis(&nes.ppu.reg_mask, &mut rgb);
+                    let pal_pixel_id = 0x11 + palette_id * 4 + value - 1;
+                    let mut rgb = PALETTE_TO_RGB[read(nes, 0x3f00 + pal_pixel_id as u16)? as usize];
+                    emphasis(&nes.ppu.reg_mask, &mut rgb);
 
-                let (pixel_x, pixel_y) = match (flip_h, flip_v) {
-                    (false, false) => (tile_x.wrapping_add(x), tile_y.wrapping_add(y as u8)),
-                    (true, false) => (tile_x.wrapping_add(7 - x), tile_y.wrapping_add(y as u8)),
-                    (false, true) => (tile_x.wrapping_add(x), tile_y.wrapping_add(7 - y as u8)),
-                    (true, true) => (tile_x.wrapping_add(7 - x), tile_y.wrapping_add(7 - y as u8)),
-                };
-                if pixel_y < 240 {
-                    nes.screen.draw_pixel(pixel_x, pixel_y, rgb)?;
+                    let (pixel_x, pixel_y) = if !spr_height_16 {
+                        match (flip_h, flip_v) {
+                            (false, false) => (tile_x.wrapping_add(x), tile_y.wrapping_add(y)),
+                            (true, false) => (tile_x.wrapping_add(7 - x), tile_y.wrapping_add(y)),
+                            (false, true) => (tile_x.wrapping_add(x), tile_y.wrapping_add(7 - y as u8)),
+                            (true, true) => (tile_x.wrapping_add(7 - x), tile_y.wrapping_add(7 - y as u8))
+                        }
+                    } else {
+                        match (flip_h, flip_v) {
+                            (false, false) => (tile_x.wrapping_add(x), tile_y.wrapping_add(y)),
+                            (true, false) => (tile_x.wrapping_add(7 - x), tile_y.wrapping_add(y)),
+                            (false, true) => (tile_x.wrapping_add(x), tile_y.wrapping_add(7 - y as u8)),
+                            (true, true) => (tile_x.wrapping_add(7 - x), tile_y.wrapping_add(7 - y as u8))
+                        }
+                    };
+                    if pixel_y < 240 {
+                        nes.screen.draw_pixel(pixel_x, pixel_y, rgb)?;
+                    }
                 }
             }
+            Ok(())
+        };
+
+        if !spr_height_16 {
+            render_sprite(spr_height_8_offset + tile_id as u16 * 16, tile_y)?;
+        } else {
+            let tile = tile_id as u16 & 0xfe;
+            render_sprite(tile * 16, tile_y)?;
+            render_sprite((tile + if tile_id & 1 != 0 { 256 } else { 1 }) * 16, tile_y + 1)?;
         }
     }
     Ok(())
@@ -513,7 +529,7 @@ where
     A: NesAudio,
 {
     for i in 0..32 {
-        let mut rgb = PALETTE_TO_RGB[read(nes, 0x3f00 + i as u16)? as usize];
+        let mut rgb = PALETTE_TO_RGB[read(nes, 0x3f00 + i as u16)? as usize % 64];
         emphasis(&nes.ppu.reg_mask, &mut rgb);
         dbg_screen.draw_pixel(i % 16, i / 16, rgb)?;
     }
