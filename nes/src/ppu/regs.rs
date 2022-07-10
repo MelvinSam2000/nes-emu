@@ -45,6 +45,10 @@ impl RegControl {
     pub fn spr_height_16(&self) -> bool {
         self.contains(RegControl::H)
     }
+
+    pub fn nametable_offset(&self) -> u16 {
+        (self.bits & 0b11) as u16 * 0x400
+    }
 }
 
 bitflags! {

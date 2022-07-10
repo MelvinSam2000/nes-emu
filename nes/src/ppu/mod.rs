@@ -4,6 +4,7 @@ use anyhow::Result;
 use crate::buscpu;
 use crate::busppu::read;
 use crate::busppu::write;
+use crate::cartridge::Mirroring;
 use crate::cpu;
 use crate::nesaudio::NesAudio;
 use crate::nesscreen::NesScreen;
@@ -132,6 +133,24 @@ const OAMDMA: u16 = 0x4014;
     MAIN PPU CLOCK
 */
 
+pub struct ViewPort {
+    pub x1: u8,
+    pub y1: u8,
+    pub x2: u8,
+    pub y2: u8,
+}
+
+impl From<[u8; 4]> for ViewPort {
+    fn from(other: [u8; 4]) -> Self {
+        ViewPort {
+            x1: other[0],
+            y1: other[1],
+            x2: other[2],
+            y2: other[3],
+        }
+    }
+}
+
 pub fn clock<S, A>(nes: &mut Nes<S, A>) -> Result<()>
 where
     S: NesScreen,
@@ -141,8 +160,10 @@ where
     if nes.ppu.scan_line == 241 && nes.ppu.scan_cycle == 1 {
         nes.ppu.reg_status.set_vblank(true);
         nes.ppu.reg_status.set_sprite_0_hit(false);
+        let (back, front) = split_sprites_back_and_front(nes);
+        render_sprites(nes, &back)?;
         render_background(nes)?;
-        render_sprites(nes)?;
+        render_sprites(nes, &front)?;
         nes.screen.vblank()?;
         if nes.ppu.reg_control.is_nmi_enabled() {
             cpu::nmi(nes)?;
@@ -283,58 +304,74 @@ where
     S: NesScreen,
     A: NesAudio,
 {
-    let chr_bank = (nes.ppu.reg_control.get_bg() as u16) * 0x1000;
-    // First nametable
-    for i in 0x2000..=0x23bf {
-        // get tile ID from vram
-        let tile = read(nes, i)?;
-        let tile_col = (i - 0x2000) % 32;
-        let tile_row = (i - 0x2000) / 32;
+    let (nt1, nt2) = match (
+        &nes.cartridge.mirroring,
+        nes.ppu.reg_control.nametable_offset(),
+    ) {
+        (Mirroring::VERTICAL, 0x000)
+        | (Mirroring::VERTICAL, 0x800)
+        | (Mirroring::HORIZONTAL, 0x000)
+        | (Mirroring::HORIZONTAL, 0x400) => (0x2000, 0x2400),
+        (Mirroring::VERTICAL, 0x400)
+        | (Mirroring::VERTICAL, 0xc00)
+        | (Mirroring::HORIZONTAL, 0x800)
+        | (Mirroring::HORIZONTAL, 0xc00) => (0x2400, 0x2000),
+        _ => Err(anyhow!(
+            "Unsupported Mirroring type: {:?}",
+            &nes.cartridge.mirroring
+        ))?,
+    };
+    let scroll_x = nes.ppu.reg_scroll.scroll_x;
+    let scroll_y = nes.ppu.reg_scroll.scroll_y;
 
-        let attr_table_idx = tile_row / 4 * 8 + tile_col / 4;
-        let attr_byte = read(nes, 0x23c0 + attr_table_idx)?;
-
-        let palette_idx = match (tile_col % 4 / 2, tile_row % 4 / 2) {
-            (0, 0) => attr_byte & 0b11,
-            (1, 0) => (attr_byte >> 2) & 0b11,
-            (0, 1) => (attr_byte >> 4) & 0b11,
-            (1, 1) => (attr_byte >> 6) & 0b11,
-            (_, _) => unreachable!(),
-        };
-        let palette_start = 4 * palette_idx;
-
-        // Draw tile
-        for row in 0..8 {
-            let mut tile_lsb = read(nes, chr_bank + (tile as u16) * 16 + row)?;
-            let mut tile_msb = read(nes, chr_bank + (tile as u16) * 16 + row + 8)?;
-            for col in 0..8 {
-                let pixel = ((tile_msb & 0x01) << 1) | (tile_lsb & 0x01);
-                tile_lsb >>= 1;
-                tile_msb >>= 1;
-                let palette_idx = match pixel {
-                    0 => read(nes, 0x3f00)?,
-                    1 | 2 | 3 => read(nes, 0x3f00 + palette_start as u16 + pixel as u16)?,
-                    _ => 0,
-                };
-                let mut rgb = PALETTE_TO_RGB[palette_idx as usize];
-                emphasis(&nes.ppu.reg_mask, &mut rgb);
-                nes.screen.draw_pixel(
-                    (tile_col * 8 + (7 - col)) as u8,
-                    (tile_row * 8 + row) as u8,
-                    rgb,
-                )?;
-            }
-        }
+    render_nametable(
+        nes,
+        nt1,
+        ViewPort::from([scroll_x, scroll_y, 255, 240]),
+        -(scroll_x as isize),
+        -(scroll_y as isize),
+    )?;
+    if scroll_x > 0 {
+        render_nametable(
+            nes,
+            nt2,
+            ViewPort::from([0, 0, scroll_x, 240]),
+            256 - scroll_x as isize,
+            0,
+        )?;
+    } else if scroll_y > 0 {
+        render_nametable(
+            nes,
+            nt2,
+            ViewPort::from([0, 0, 255, scroll_y]),
+            0,
+            240 - scroll_y as isize,
+        )?;
     }
+
     Ok(())
 }
 
-pub fn render_sprites<S, A>(nes: &mut Nes<S, A>) -> Result<()>
+fn split_sprites_back_and_front<S, A>(nes: &mut Nes<S, A>) -> (Vec<u8>, Vec<u8>) where S: NesScreen, A: NesAudio {
+    let mut back = vec![];
+    let mut front = vec![];
+    for i in (0..255).step_by(4).rev() {
+        if nes.ppu.oam[i as usize + 2] >> 5 & 1 != 0 {
+            back.push(i);
+        } else {
+            front.push(i);
+        }
+    }
+    (back, front)
+}
+
+pub fn render_sprites<S, A>(nes: &mut Nes<S, A>, sprites: &[u8]) -> Result<()>
 where
     S: NesScreen,
     A: NesAudio,
 {
-    for i in (0..256).step_by(4).rev() {
+    for i in sprites {
+        let i = *i as usize;
         let tile_id = nes.ppu.oam[i + 1];
         let tile_x = nes.ppu.oam[i + 3];
         let tile_y = nes.ppu.oam[i];
@@ -368,15 +405,23 @@ where
                         match (flip_h, flip_v) {
                             (false, false) => (tile_x.wrapping_add(x), tile_y.wrapping_add(y)),
                             (true, false) => (tile_x.wrapping_add(7 - x), tile_y.wrapping_add(y)),
-                            (false, true) => (tile_x.wrapping_add(x), tile_y.wrapping_add(7 - y as u8)),
-                            (true, true) => (tile_x.wrapping_add(7 - x), tile_y.wrapping_add(7 - y as u8))
+                            (false, true) => {
+                                (tile_x.wrapping_add(x), tile_y.wrapping_add(7 - y as u8))
+                            }
+                            (true, true) => {
+                                (tile_x.wrapping_add(7 - x), tile_y.wrapping_add(7 - y as u8))
+                            }
                         }
                     } else {
                         match (flip_h, flip_v) {
                             (false, false) => (tile_x.wrapping_add(x), tile_y.wrapping_add(y)),
                             (true, false) => (tile_x.wrapping_add(7 - x), tile_y.wrapping_add(y)),
-                            (false, true) => (tile_x.wrapping_add(x), tile_y.wrapping_add(7 - y as u8)),
-                            (true, true) => (tile_x.wrapping_add(7 - x), tile_y.wrapping_add(7 - y as u8))
+                            (false, true) => {
+                                (tile_x.wrapping_add(x), tile_y.wrapping_add(7 - y as u8))
+                            }
+                            (true, true) => {
+                                (tile_x.wrapping_add(7 - x), tile_y.wrapping_add(7 - y as u8))
+                            }
                         }
                     };
                     if pixel_y < 240 {
@@ -392,7 +437,10 @@ where
         } else {
             let tile = tile_id as u16 & 0xfe;
             render_sprite(tile * 16, tile_y)?;
-            render_sprite((tile + if tile_id & 1 != 0 { 256 } else { 1 }) * 16, tile_y + 1)?;
+            render_sprite(
+                (tile + if tile_id & 1 != 0 { 256 } else { 1 }) * 16,
+                tile_y + 1,
+            )?;
         }
     }
     Ok(())
@@ -401,6 +449,73 @@ where
 /*
     UTILITY FUNCTIONS
 */
+
+pub fn render_nametable<S, A>(
+    nes: &mut Nes<S, A>,
+    nt_base: u16,
+    view_port: ViewPort,
+    scroll_x: isize,
+    scroll_y: isize,
+) -> Result<()>
+where
+    S: NesScreen,
+    A: NesAudio,
+{
+    let chr_bank = (nes.ppu.reg_control.get_bg() as u16) * 0x1000;
+    // First nametable
+    for nt_offset in 0x000..=0x3bf {
+        let nt_addr = nt_base + nt_offset;
+        // get tile ID from vram
+        let tile = read(nes, nt_addr)?;
+        let tile_col = nt_offset % 32;
+        let tile_row = nt_offset / 32;
+
+        let attr_table_idx = tile_row / 4 * 8 + tile_col / 4;
+        let attr_byte = read(nes, nt_base + 0x3c0 + attr_table_idx)?;
+
+        let palette_idx = match (tile_col % 4 / 2, tile_row % 4 / 2) {
+            (0, 0) => attr_byte & 0b11,
+            (1, 0) => (attr_byte >> 2) & 0b11,
+            (0, 1) => (attr_byte >> 4) & 0b11,
+            (1, 1) => (attr_byte >> 6) & 0b11,
+            _ => unreachable!(),
+        };
+        let palette_start = 4 * palette_idx;
+
+        // Draw tile
+        for row in 0..8 {
+            let mut tile_lsb = read(nes, chr_bank + (tile as u16) * 16 + row)?;
+            let mut tile_msb = read(nes, chr_bank + (tile as u16) * 16 + row + 8)?;
+            for col in 0..8 {
+                let pixel = ((tile_msb & 0x01) << 1) | (tile_lsb & 0x01);
+                tile_lsb >>= 1;
+                tile_msb >>= 1;
+                let palette_idx = match pixel {
+                    0 => read(nes, 0x3f00)?,
+                    1 | 2 | 3 => read(nes, 0x3f00 + palette_start as u16 + pixel as u16)?,
+                    _ => unreachable!(),
+                };
+
+                let pixel_x = (tile_col * 8 + (7 - col)) as u8;
+                let pixel_y = (tile_row * 8 + row) as u8;
+                if pixel_x >= view_port.x1
+                    && pixel_x < view_port.x2
+                    && pixel_y >= view_port.y1
+                    && pixel_y < view_port.y2
+                {
+                    let mut rgb = PALETTE_TO_RGB[palette_idx as usize];
+                    emphasis(&nes.ppu.reg_mask, &mut rgb);
+                    nes.screen.draw_pixel(
+                        (scroll_x + pixel_x as isize) as u8,
+                        (scroll_y + pixel_y as isize) as u8,
+                        rgb,
+                    )?;
+                }
+            }
+        }
+    }
+    Ok(())
+}
 
 pub fn emphasis(rmask: &RegMask, rgb: &mut (u8, u8, u8)) {
     if rmask.emphasis_r() {
