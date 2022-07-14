@@ -1,0 +1,12 @@
+version: '3'
+services:
+  nopor-client:
+    image: melvinsamxd/nes-emu:v1
+    container_name: c-nes-emu
+    restart: always
+    build:
+      context: ../../../
+      dockerfile: Dockerfile
+    ports:
+      - 8002:8000
+  
