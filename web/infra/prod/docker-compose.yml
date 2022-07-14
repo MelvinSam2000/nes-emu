@@ -1,6 +1,6 @@
 version: '3'
 services:
-  nopor-client:
+  nes-emu:
     image: melvinsamxd/nes-emu:v1
     container_name: c-nes-emu
     restart: always
