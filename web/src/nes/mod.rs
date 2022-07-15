@@ -32,9 +32,4 @@ impl Nes {
     }
 }
 
-pub enum NesEvent {
-    Load(Vec<u8>),
-    Reset,
-}
-
 pub mod screen;

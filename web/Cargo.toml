@@ -10,10 +10,12 @@ codegen-units = 1
 
 [dependencies]
 anyhow = "1.0.58"
-dioxus = { version = "0.2.4", features = ["web"] }
-log = { version = "0.4.17", features = ["release_max_level_error"] }
+log = { version = "0.4.17", features = ["release_max_level_info"] }
 nes = { path = "../nes" }
 wasm-bindgen = "0.2.81"
 wasm-logger = "0.2.0"
 fluvio-wasm-timer = "0.2.5"
 web-sys = { version = "0.3.58", features = ["CanvasRenderingContext2d", "Document", "Window", "Element", "HtmlCanvasElement", "ImageData", "FileReader", "OscillatorNode", "OscillatorType", "GainNode", "AudioNode", "AudioContext", "AudioParam", "PeriodicWaveOptions"] }
+yew = "0.19.3"
+wasm-bindgen-futures = "0.4.31"
+futures = "0.3.21"
