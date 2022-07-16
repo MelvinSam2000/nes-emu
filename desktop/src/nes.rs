@@ -92,47 +92,16 @@ impl Nes {
 
     pub fn poll_key_press(&mut self) -> Result<()> {
         let window = self.window.try_borrow();
+        let nes = &mut self.nes;
         if let Ok(window) = window {
-            if window.is_key_down(Key::Up) {
-                self.nes.press_btn(Button::UP, true)?;
-            } else {
-                self.nes.release_btn(Button::UP, true)?;
-            }
-            if window.is_key_down(Key::Down) {
-                self.nes.press_btn(Button::DOWN, true)?;
-            } else {
-                self.nes.release_btn(Button::DOWN, true)?;
-            }
-            if window.is_key_down(Key::Right) {
-                self.nes.press_btn(Button::RIGHT, true)?;
-            } else {
-                self.nes.release_btn(Button::RIGHT, true)?;
-            }
-            if window.is_key_down(Key::Left) {
-                self.nes.press_btn(Button::LEFT, true)?;
-            } else {
-                self.nes.release_btn(Button::LEFT, true)?;
-            }
-            if window.is_key_down(Key::A) {
-                self.nes.press_btn(Button::BTN_A, true)?;
-            } else {
-                self.nes.release_btn(Button::BTN_A, true)?;
-            }
-            if window.is_key_down(Key::S) {
-                self.nes.press_btn(Button::BTN_B, true)?;
-            } else {
-                self.nes.release_btn(Button::BTN_B, true)?;
-            }
-            if window.is_key_down(Key::Enter) {
-                self.nes.press_btn(Button::START, true)?;
-            } else {
-                self.nes.release_btn(Button::START, true)?;
-            }
-            if window.is_key_down(Key::Space) {
-                self.nes.press_btn(Button::SELECT, true)?;
-            } else {
-                self.nes.release_btn(Button::SELECT, true)?;
-            }
+            Self::poll_single_key(nes, &window, Key::Up, Button::Up)?;
+            Self::poll_single_key(nes, &window, Key::Down, Button::Down)?;
+            Self::poll_single_key(nes, &window, Key::Right, Button::Right)?;
+            Self::poll_single_key(nes, &window, Key::Left, Button::Left)?;
+            Self::poll_single_key(nes, &window, Key::A, Button::A)?;
+            Self::poll_single_key(nes, &window, Key::S, Button::B)?;
+            Self::poll_single_key(nes, &window, Key::Enter, Button::Start)?;
+            Self::poll_single_key(nes, &window, Key::Space, Button::Select)?;
         }
         Ok(())
     }
@@ -145,5 +114,18 @@ impl Nes {
             }
         }
         Ok(())
+    }
+
+    fn poll_single_key(
+        nes: &mut ::nes::Nes<NesScreen, NesAudio>,
+        window: &Window,
+        key: Key,
+        button: Button,
+    ) -> Result<()> {
+        if window.is_key_down(key) {
+            nes.press_btn(button, true)
+        } else {
+            nes.release_btn(button, true)
+        }
     }
 }

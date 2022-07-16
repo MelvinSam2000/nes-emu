@@ -94,7 +94,9 @@ where
     A: NesAudio,
 {
     let dasm = Disassembler::with_offset(addr_start);
-    let code = (addr_start..addr_end).map(|addr| buscpu::read(nes, addr)).collect::<Result<Vec<u8>>>()?;
+    let code = (addr_start..addr_end)
+        .map(|addr| buscpu::read(nes, addr))
+        .collect::<Result<Vec<u8>>>()?;
     let asm = dasm.disassemble(&code);
     println!("{}", asm);
     Ok(())

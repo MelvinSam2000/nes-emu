@@ -6,24 +6,42 @@ pub struct Joypad {
 }
 
 #[allow(non_camel_case_types)]
+#[derive(Copy, Clone)]
 pub enum Button {
-    BTN_A = 1 << 0,
-    BTN_B = 1 << 1,
-    SELECT = 1 << 2,
-    START = 1 << 3,
-    UP = 1 << 4,
-    DOWN = 1 << 5,
-    LEFT = 1 << 6,
-    RIGHT = 1 << 7,
+    A,
+    B,
+    Select,
+    Start,
+    Up,
+    Down,
+    Left,
+    Right
+}
+
+impl From<Button> for u8 {
+    fn from(button: Button) -> Self {
+        match button {
+            Button::A => 1 << 0,
+            Button::B => 1 << 1,
+            Button::Select => 1 << 2,
+            Button::Start => 1 << 3,
+            Button::Up => 1 << 4,
+            Button::Down => 1 << 5,
+            Button::Left => 1 << 6,
+            Button::Right => 1 << 7,
+        }
+    }
 }
 
 impl Joypad {
     pub fn press(&mut self, btn: Button) {
-        self.status |= btn as u8;
+        let btn = <Button as Into<u8>>::into(btn);
+        self.status |= btn;
     }
 
     pub fn release(&mut self, btn: Button) {
-        self.status &= !(btn as u8);
+        let btn = <Button as Into<u8>>::into(btn);
+        self.status &= !btn;
     }
 
     pub fn read(&mut self) -> u8 {
