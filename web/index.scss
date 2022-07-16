@@ -23,10 +23,66 @@ body {
     font-family: "Poppins";
     display: grid;
     place-content: center;
+
+    // transform-origin: right;
+    // transform: translate(-100vw, 0) rotate(180deg);
+    // writing-mode: vertical-rl;
     
     #nes-canvas {
-        transform: scale(2);
+        transform: scale(1.5);
         image-rendering: pixelated;
     }
+
+    input {
+        position: absolute;
+    }
+
+    .nes-joypad {
+
+        background: none;
+        position: absolute;
+
+        * {
+            button {
+                background-color: $color-3;
+                color: $color-2;
+                border: none;
+            }
+        }
+
+        .nes-joypad-left {
+            position: relative;
+            background: red;
+
+            button {
+                border-radius: 50%;
+                height: 2em;
+                width: 2em;
+            }
+        }
+    
+        .nes-joypad-right-up {
+            position: relative;
+            float: right;
+            background: green;
+
+            button {
+                border-radius: 50%;
+                height: 3em;
+                width: 3em;
+            }
+        }
+    
+        .nes-joypad-right-down {
+            position: relative;
+            float: right;
+            background: blue;
+            button {
+                border-radius: 10%;
+                padding: 0.2em 0.5em;
+            }
+        }
+    }
+    
 }
 

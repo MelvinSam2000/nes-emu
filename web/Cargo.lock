@@ -354,6 +354,8 @@ dependencies = [
  "anyhow",
  "fluvio-wasm-timer",
  "futures",
+ "gloo-file",
+ "js-sys",
  "log",
  "nes",
  "wasm-bindgen",

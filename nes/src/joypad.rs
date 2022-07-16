@@ -5,7 +5,6 @@ pub struct Joypad {
     pub index: u8,
 }
 
-#[allow(non_camel_case_types)]
 #[derive(Copy, Clone)]
 pub enum Button {
     A,
@@ -15,7 +14,7 @@ pub enum Button {
     Up,
     Down,
     Left,
-    Right
+    Right,
 }
 
 impl From<Button> for u8 {

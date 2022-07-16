@@ -352,7 +352,11 @@ where
     Ok(())
 }
 
-fn split_sprites_back_and_front<S, A>(nes: &mut Nes<S, A>) -> (Vec<u8>, Vec<u8>) where S: NesScreen, A: NesAudio {
+fn split_sprites_back_and_front<S, A>(nes: &mut Nes<S, A>) -> (Vec<u8>, Vec<u8>)
+where
+    S: NesScreen,
+    A: NesAudio,
+{
     let mut back = vec![];
     let mut front = vec![];
     for i in (0..255).step_by(4).rev() {

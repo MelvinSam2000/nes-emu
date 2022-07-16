@@ -46,7 +46,6 @@ impl<S, A> Default for Cartridge<S, A> {
 }
 
 pub fn load_cartridge<S, A>(nes: &mut Nes<S, A>, rom_bytes: &[u8]) -> Result<()> {
-
     if rom_bytes.len() < 4 {
         Err(anyhow!("Invalid NES ROM was provided: No NES ROM"))?;
     }

@@ -1,7 +1,7 @@
 use ::nes::nesaudio::NoAudio;
 use anyhow::Result;
+use nes::joypad::Button;
 
-use crate::dk::DK_ROM;
 use crate::nes::screen::Screen;
 
 const NES_HEIGHT: usize = 240;
@@ -27,8 +27,16 @@ impl Nes {
         self.nes.reset()
     }
 
-    pub fn load(&mut self, _rom_bytes: &[u8]) -> Result<()> {
-        self.nes.load(DK_ROM)
+    pub fn load(&mut self, rom_bytes: &[u8]) -> Result<()> {
+        self.nes.load(rom_bytes)
+    }
+
+    pub fn press_btn(&mut self, btn: Button) -> Result<()> {
+        self.nes.press_btn(btn, true)
+    }
+
+    pub fn release_btn(&mut self, btn: Button) -> Result<()> {
+        self.nes.release_btn(btn, true)
     }
 }
 

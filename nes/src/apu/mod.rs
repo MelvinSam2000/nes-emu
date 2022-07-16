@@ -24,10 +24,7 @@ pub fn read<S, A>(_nes: &mut Nes<S, A>, _addr: u16) -> Result<u8> {
     Ok(0)
 }
 
-pub fn write<S, A>(nes: &mut Nes<S, A>, addr: u16, data: u8) -> Result<()>
-where
-    A: NesAudio,
-{
+pub fn write<S, A: NesAudio>(nes: &mut Nes<S, A>, addr: u16, data: u8) -> Result<()> {
     match addr {
         // PULSE 1
         0x4000 => {
