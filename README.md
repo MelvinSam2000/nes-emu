@@ -6,10 +6,10 @@ where I rewrote/recopied it with better Rust knowledge.
 
 ## Emulation information
 
-6502 CPU fully emulated and passes Blarggs NES test. No plans on changing CPU.
-PPU/GPU semi-functional but requires debugging. More info on TODO section.
-Audio Unit also functional but incomplete. More info on TODO section.
-Mappers 0-3 implemented. (NROM, MMC1, UxROM, CnROM). More info on TODO section.
+- 6502 CPU fully emulated and passes Blarggs NES test. No plans on changing CPU.
+- PPU/GPU semi-functional but requires debugging. More info on TODO section.
+- Audio Unit also functional but incomplete. More info on TODO section.
+- Mappers 0-3 implemented. (NROM, MMC1, UxROM, CnROM). More info on TODO section.
 
 ## Targets
 
@@ -46,6 +46,27 @@ trunk serve --release
 
 The library can also be used independently of the binaries. Simply implement the NesScreen,
 and NesAudio according to the target that you are using (web, desktop, mobile, embedded, punchcard, etc).
+
+## Games that work
+
+- Donkey Kong
+- Pacman
+- Super Mario Bros
+- Arkanoid
+- Mario Brothers
+- Tennis
+- Metroid
+- .etc
+
+## Games that "kinda work"
+
+- Zelda
+- Super Mario Bros 2
+- Contra
+- Ice Climbers
+- Metal Gear
+- Mega Man
+- .etc
 
 ## TODO
 
