@@ -1,21 +1,30 @@
-use ::nes::nesaudio::NoAudio;
+use std::rc::Rc;
+
+use anyhow::anyhow;
 use anyhow::Result;
 use nes::joypad::Button;
+use web_sys::AudioContext;
 
+use self::audio::NesAudio;
 use crate::nes::screen::Screen;
 
 const NES_HEIGHT: usize = 240;
 const NES_WIDTH: usize = 256;
 
 pub struct Nes {
-    nes: ::nes::Nes<Screen, NoAudio>,
+    nes: ::nes::Nes<Screen, NesAudio>,
+    pub audio_ctx: Rc<AudioContext>,
 }
 
 impl Nes {
     pub fn new() -> Result<Self> {
         let screen = Screen::new()?;
+        let audio =
+            NesAudio::new().map_err(|err| anyhow!("Error initializing audio: {:?}", err))?;
+        let audio_ctx = audio.get_audio_ctx();
         Ok(Self {
-            nes: ::nes::Nes::new(screen, NoAudio),
+            nes: ::nes::Nes::new(screen, audio),
+            audio_ctx,
         })
     }
 
@@ -40,4 +49,5 @@ impl Nes {
     }
 }
 
+pub mod audio;
 pub mod screen;

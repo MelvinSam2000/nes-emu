@@ -48,13 +48,13 @@ async fn nes_thread(
                     nes.load(&rom_bytes)?;
                     nes.reset()?;
                 }
-                Reset => log::info!("RESET"), //nes.reset()?,
+                Reset => nes.reset()?,
                 ButtonPress(btn) => nes.press_btn(btn)?,
                 ButtonRelease(btn) => nes.release_btn(btn)?,
                 _ => {}
             }
         } else {
-            for _ in 0..1000 {
+            for _ in 0..500 {
                 nes.clock()?;
             }
         }
@@ -141,50 +141,62 @@ impl Component for CNes {
 
         html! {
             <div class="nes">
-                <input type="file" multiple=true onchange={load_rom}/>
+                <input class="nes-rom-file"
+                    type="file"
+                    accept="*.nes"
+                    onchange={load_rom}/>
+                <button class="btn-mute"> { "UNMUTE" }</button> 
                 <canvas id="nes-canvas" width=256 height=240>
                 </canvas>
                 // NES Buttons
                 <div class="nes-joypad">
                     <div class="nes-joypad-left">
                         <button id="up"
-                            onpointerdown={btn_press(Button::Up)}
-                            onpointerup={btn_release(Button::Up)} >
+                            onpointerenter={btn_press(Button::Up)}
+                            onpointerup={btn_release(Button::Up)}
+                            onpointerleave={btn_release(Button::Up)} >
                         </button>
                         <button id="down"
-                            onpointerdown={btn_press(Button::Down)}
-                            onpointerup={btn_release(Button::Down)} >
+                            onpointerenter={btn_press(Button::Down)}
+                            onpointerup={btn_release(Button::Down)}
+                            onpointerleave={btn_release(Button::Down)} >
                         </button>
                         <button id="right"
-                            onpointerdown={btn_press(Button::Right)}
-                            onpointerup={btn_release(Button::Right)} >
+                            onpointerenter={btn_press(Button::Right)}
+                            onpointerup={btn_release(Button::Right)}
+                            onpointerleave={btn_release(Button::Right)} >
                         </button>
                         <button id="left"
-                            onpointerdown={btn_press(Button::Left)}
-                            onpointerup={btn_release(Button::Left)} >
+                            onpointerenter={btn_press(Button::Left)}
+                            onpointerup={btn_release(Button::Left)}
+                            onpointerleave={btn_release(Button::Left)} >
                         </button>
                     </div>
                     <div class="nes-joypad-right-up">
                         <button id="b"
-                            onpointerdown={btn_press(Button::B)}
-                            onpointerup={btn_release(Button::B)} >
+                            onpointerenter={btn_press(Button::B)}
+                            onpointerup={btn_release(Button::B)}
+                            onpointerleave={btn_release(Button::B)} >
                             { "B" }
                         </button>
                         <button id="a"
-                            onpointerdown={btn_press(Button::A)}
-                            onpointerup={btn_release(Button::A)} >
+                            onpointerenter={btn_press(Button::A)}
+                            onpointerup={btn_release(Button::A)}
+                            onpointerleave={btn_release(Button::A)} >
                             { "A" }
                         </button>
                     </div>
                     <div class="nes-joypad-right-down">
                         <button id="start"
-                            onpointerdown={btn_press(Button::Start)}
-                            onpointerup={btn_release(Button::Start)} >
+                            onpointerenter={btn_press(Button::Start)}
+                            onpointerup={btn_release(Button::Start)}
+                            onpointerleave={btn_release(Button::Start)} >
                             { "START" }
                         </button>
                         <button id="select"
-                            onpointerdown={btn_press(Button::Select)}
-                            onpointerup={btn_release(Button::Select)} >
+                            onpointerenter={btn_press(Button::Select)}
+                            onpointerup={btn_release(Button::Select)}
+                            onpointerleave={btn_release(Button::Select)} >
                             { "SELECT" }
                         </button>
                     </div>
@@ -200,5 +212,4 @@ pub fn main() {
     yew::start_app::<CNes>();
 }
 
-pub mod dk;
 pub mod nes;

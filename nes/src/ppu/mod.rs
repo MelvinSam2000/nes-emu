@@ -160,10 +160,10 @@ where
     if nes.ppu.scan_line == 241 && nes.ppu.scan_cycle == 1 {
         nes.ppu.reg_status.set_vblank(true);
         nes.ppu.reg_status.set_sprite_0_hit(false);
-        let (back, front) = split_sprites_back_and_front(nes);
-        render_sprites(nes, &back)?;
+        //let (back, front) = split_sprites_back_and_front(nes);
         render_background(nes)?;
-        render_sprites(nes, &front)?;
+        render_sprites(nes, &(0..255).step_by(4).rev().collect::<Vec<u8>>())?;
+        //render_sprites(nes, &front)?;
         nes.screen.vblank()?;
         if nes.ppu.reg_control.is_nmi_enabled() {
             cpu::nmi(nes)?;
@@ -352,6 +352,7 @@ where
     Ok(())
 }
 
+#[allow(dead_code)]
 fn split_sprites_back_and_front<S, A>(nes: &mut Nes<S, A>) -> (Vec<u8>, Vec<u8>)
 where
     S: NesScreen,

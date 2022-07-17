@@ -17,7 +17,7 @@ RUN mkdir web
 COPY ./web ./web
 WORKDIR /usr/src/nes-web/web
 RUN trunk build --release
-RUN wasm-opt -Oz dist/nes-web_bg.wasm -o dist/nes-web_bg.wasm
+RUN wasm-opt -O3 dist/nes-web_bg.wasm -o dist/nes-web_bg.wasm
 
 # Deployment
 FROM nginx:1.22.0-alpine
