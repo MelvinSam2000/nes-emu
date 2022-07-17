@@ -1,20 +1,21 @@
 # NES Emulator
 
 NES Emulator written in Rust for fun/learning purposes. This project is not done and
-I will be coming back in the future to continue it :). However it can run few games almost perfectly already. This project was started a year ago and this repo is like a "fork" 
+I will be coming back in the future to continue it :). However it can run few games almost perfectly already. This project was started more than a year ago (with only one month of actual work) and this repo is like a "fork" 
 where I rewrote/recopied it with better Rust knowledge.
 
 ## Emulation information
 
-- 6502 CPU fully emulated and passes Blarggs NES test. No plans on changing CPU.
+- CPU fully emulated and passes Blarggs NES test. No plans on changing CPU.
 - PPU/GPU semi-functional but requires debugging. More info on TODO section.
 - Audio Unit also functional but incomplete. More info on TODO section.
-- Mappers 0-3 implemented. (NROM, MMC1, UxROM, CnROM). More info on TODO section.
+- Mappers 0-3 "implemented". (NROM, MMC1, UxROM, CnROM). More info on TODO section.
 
 ## Targets
 
 Targets desktop via minifb crate (cross-platform windowing library),
-as well as web-audio-api crate (cross-platform audio library that resembles WebAudio browser api). Has debugging functionality (CHR-ROM and VRAM visualization, as well as debug cli console)
+as well as web-audio-api crate (cross-platform native audio library that resembles WebAudio browser api). 
+Has debugging functionality (CHR-ROM and VRAM visualization, as well as debug cli console)
 
 Targets web as a WASM application, using Yew framework and web-sys bindings.
 Currently only playable on Mobile Browser, with no Audio (thank you Android)
@@ -95,9 +96,9 @@ and NesAudio according to the target that you are using (web, desktop, mobile, e
 
 ### Web
 - [ ] Fix audiocontext suspend issue on Mobile
+- [ ] Make playable on desktop
 - [ ] Canvas requestAnimationFrame
 - [ ] Potentially webworkers + canvas
-
 
 ## Contributions
 
