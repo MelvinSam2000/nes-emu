@@ -24,7 +24,7 @@ struct CNes {
     nes_channel: mpsc::Sender<NesMessage>,
     load_signal: Option<oneshot::Sender<()>>,
     file_reader: Option<FileReader>,
-    _audio_context: Rc<AudioContext>,
+    audio_context: Rc<AudioContext>,
 }
 
 pub enum NesMessage {
