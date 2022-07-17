@@ -22,7 +22,7 @@ html, body {
     font-family: "Poppins";
     display: grid;
     place-content: center;
-    touch-action: manipulation;
+    touch-action: manipulation  ;
     
     #nes-canvas {
         transform: scale(1.5);
@@ -67,19 +67,19 @@ html, body {
             }
 
             #up {
-                transform: translate(0em, -2.8em);
+                transform: translate(0em, -2.9em);
             }
 
             #down {
-                transform: translate(0em, 2.8em);
+                transform: translate(0em, 2.9em);
             }
 
             #left {
-                transform: translate(-2.8em, 0em);
+                transform: translate(-2.9em, 0em);
             }
 
             #right {
-                transform: translate(2.8em, 0em);
+                transform: translate(2.9em, 0em);
             }
         }
     
@@ -100,7 +100,7 @@ html, body {
     
         .nes-joypad-right-down {
             position: absolute;
-            right: 1em;
+            right: 1.5em;
             bottom: 1em;
 
             button {

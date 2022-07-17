@@ -1,3 +1,4 @@
+use std::rc::Rc;
 use std::time::Duration;
 
 use ::nes::joypad::Button;
@@ -10,6 +11,7 @@ use gloo_file::callbacks::FileReader;
 use gloo_file::Blob;
 use wasm_bindgen_futures::spawn_local;
 use wasm_logger::Config;
+use web_sys::AudioContext;
 use web_sys::File;
 use web_sys::HtmlInputElement;
 use yew::prelude::*;
@@ -22,6 +24,7 @@ struct CNes {
     nes_channel: mpsc::Sender<NesMessage>,
     load_signal: Option<oneshot::Sender<()>>,
     file_reader: Option<FileReader>,
+    _audio_context: Rc<AudioContext>,
 }
 
 pub enum NesMessage {
@@ -33,12 +36,12 @@ pub enum NesMessage {
 }
 
 async fn nes_thread(
+    mut nes: Nes,
     mut rx: mpsc::Receiver<NesMessage>,
     load_signal: oneshot::Receiver<()>,
 ) -> Result<()> {
     use self::NesMessage::*;
 
-    let mut nes = Nes::new()?;
     load_signal.await?;
 
     loop {
@@ -70,8 +73,14 @@ impl Component for CNes {
         let (tx, rx) = mpsc::channel::<NesMessage>(CHANNEL_LEN);
         let (load_signal_tx, load_signal_rx) = oneshot::channel::<()>();
 
+        let nes = Nes::new().unwrap_or_else(|err| {
+            panic!("Could not start NES due to err: {err}");
+        });
+
+        let audio_context = nes.audio_ctx.clone();
+
         spawn_local(async move {
-            if let Err(err) = nes_thread(rx, load_signal_rx).await {
+            if let Err(err) = nes_thread(nes, rx, load_signal_rx).await {
                 log::error!("NES crashed due to err: {}", err);
             }
         });
@@ -80,6 +89,7 @@ impl Component for CNes {
             nes_channel: tx,
             load_signal: Some(load_signal_tx),
             file_reader: None,
+            audio_context,
         }
     }
 
@@ -119,8 +129,36 @@ impl Component for CNes {
         let link = ctx.link();
 
         // button callbacks
+        // mobile
         let btn_press = |btn| link.callback(move |_| NesMessage::ButtonPress(btn));
         let btn_release = |btn| link.callback(move |_| NesMessage::ButtonRelease(btn));
+        // desktop
+        let onkeydown = link.batch_callback(move |e: KeyboardEvent| {
+            match e.key().as_str() {
+                "ArrowUp" => Some(NesMessage::ButtonPress(Button::Up)),
+                "ArrowDown" => Some(NesMessage::ButtonPress(Button::Down)),
+                "ArrowRight" => Some(NesMessage::ButtonPress(Button::Right)),
+                "ArrowLeft" => Some(NesMessage::ButtonPress(Button::Left)),
+                "a" | "A" => Some(NesMessage::ButtonPress(Button::A)),
+                "s" | "S" => Some(NesMessage::ButtonPress(Button::B)),
+                "Shift" => Some(NesMessage::ButtonPress(Button::Select)),
+                "Enter" => Some(NesMessage::ButtonPress(Button::Start)),
+                _ => None
+            }
+        });
+        let onkeyup = link.batch_callback(move |e: KeyboardEvent| {
+            match e.key().as_str() {
+                "ArrowUp" => Some(NesMessage::ButtonRelease(Button::Up)),
+                "ArrowDown" => Some(NesMessage::ButtonRelease(Button::Down)),
+                "ArrowRight" => Some(NesMessage::ButtonRelease(Button::Right)),
+                "ArrowLeft" => Some(NesMessage::ButtonRelease(Button::Left)),
+                "a" | "A" => Some(NesMessage::ButtonRelease(Button::A)),
+                "s" | "S" => Some(NesMessage::ButtonRelease(Button::B)),
+                "Shift" => Some(NesMessage::ButtonRelease(Button::Select)),
+                "Enter" => Some(NesMessage::ButtonRelease(Button::Start)),
+                _ => None
+            }
+        });
 
         // nes file reader callback
         let load_rom = link.batch_callback(move |e: Event| {
@@ -140,12 +178,11 @@ impl Component for CNes {
         });
 
         html! {
-            <div class="nes">
+            <div class="nes" tabindex="0" {onkeydown} {onkeyup}>
                 <input class="nes-rom-file"
                     type="file"
                     accept="*.nes"
                     onchange={load_rom}/>
-                <button class="btn-mute"> { "UNMUTE" }</button> 
                 <canvas id="nes-canvas" width=256 height=240>
                 </canvas>
                 // NES Buttons
@@ -154,7 +191,7 @@ impl Component for CNes {
                         <button id="up"
                             onpointerenter={btn_press(Button::Up)}
                             onpointerup={btn_release(Button::Up)}
-                            onpointerleave={btn_release(Button::Up)} >
+                            onpointerleave={btn_release(Button::Up)}>
                         </button>
                         <button id="down"
                             onpointerenter={btn_press(Button::Down)}
@@ -208,7 +245,7 @@ impl Component for CNes {
 
 pub fn main() {
     wasm_logger::init(Config::new(log::Level::Debug));
-    log::info!("Logging enabled");
+    log::debug!("Debug Logging enabled");
     yew::start_app::<CNes>();
 }
 

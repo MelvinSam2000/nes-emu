@@ -17,12 +17,11 @@ Targets desktop via minifb crate (cross-platform windowing library),
 as well as web-audio-api crate (cross-platform native audio library that resembles WebAudio browser api). 
 Has debugging functionality (CHR-ROM and VRAM visualization, as well as debug cli console)
 
-Targets web as a WASM application, using Yew framework and web-sys bindings.
-Currently only playable on Mobile Browser, with no Audio (thank you Android)
+Targets web as a WASM application, using Yew framework, web-sys bindings and SASS for styling. Playable in desktop and mobile but made with mobile in mind.
 
 ## Installation
 
-Rust and Cargo are required (ofc).
+Rust and Cargo are required.
 Project consists of 3 cargo crates: the NES library, the desktop binary target, and the web binary target.
 
 The desktop target uses 2 crates for windowing and audio. The required shared libraries for these crates are likely to be already installed on your system but I cant guarantee that.
@@ -98,11 +97,12 @@ and NesAudio according to the target that you are using (web, desktop, mobile, e
 
 ### Web
 - [ ] Fix audiocontext suspend issue on Mobile
-- [ ] Make playable on desktop
+- [x] Make playable on desktop
 - [ ] Canvas requestAnimationFrame
 - [ ] Potentially webworkers + canvas
 - [ ] Add demo games
 - [ ] Add a menu with previously loaded games
+- [ ] PWA
 
 ## Contributions
 
