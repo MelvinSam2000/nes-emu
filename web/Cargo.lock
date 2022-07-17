@@ -354,6 +354,7 @@ dependencies = [
  "anyhow",
  "fluvio-wasm-timer",
  "futures",
+ "gloo-dialogs",
  "gloo-file",
  "js-sys",
  "log",
