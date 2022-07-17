@@ -406,6 +406,8 @@ where
                     let mut rgb = PALETTE_TO_RGB[read(nes, 0x3f00 + pal_pixel_id as u16)? as usize];
                     emphasis(&nes.ppu.reg_mask, &mut rgb);
 
+                    // FIX SPRITES WITH 16x8 HEIGHT
+                    /*
                     let (pixel_x, pixel_y) = if !spr_height_16 {
                         match (flip_h, flip_v) {
                             (false, false) => (tile_x.wrapping_add(x), tile_y.wrapping_add(y)),
@@ -429,6 +431,16 @@ where
                             }
                         }
                     };
+                    */
+                    let (pixel_x, pixel_y) = match (flip_h, flip_v) {
+                        (false, false) => (tile_x.wrapping_add(x), tile_y.wrapping_add(y)),
+                        (true, false) => (tile_x.wrapping_add(7 - x), tile_y.wrapping_add(y)),
+                        (false, true) => (tile_x.wrapping_add(x), tile_y.wrapping_add(7 - y as u8)),
+                        (true, true) => {
+                            (tile_x.wrapping_add(7 - x), tile_y.wrapping_add(7 - y as u8))
+                        }
+                    };
+
                     if pixel_y < 240 {
                         nes.screen.draw_pixel(pixel_x, pixel_y, rgb)?;
                     }

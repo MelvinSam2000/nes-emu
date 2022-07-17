@@ -1,7 +1,7 @@
-use std::rc::Rc;
 use std::time::Duration;
 
 use ::nes::joypad::Button;
+use anyhow::anyhow;
 use anyhow::Result;
 use fluvio_wasm_timer::Delay;
 use futures::channel::mpsc;
@@ -11,7 +11,6 @@ use gloo_file::callbacks::FileReader;
 use gloo_file::Blob;
 use wasm_bindgen_futures::spawn_local;
 use wasm_logger::Config;
-use web_sys::AudioContext;
 use web_sys::File;
 use web_sys::HtmlInputElement;
 use yew::prelude::*;
@@ -24,7 +23,6 @@ struct CNes {
     nes_channel: mpsc::Sender<NesMessage>,
     load_signal: Option<oneshot::Sender<()>>,
     file_reader: Option<FileReader>,
-    audio_context: Rc<AudioContext>,
 }
 
 pub enum NesMessage {
@@ -36,13 +34,20 @@ pub enum NesMessage {
 }
 
 async fn nes_thread(
-    mut nes: Nes,
     mut rx: mpsc::Receiver<NesMessage>,
     load_signal: oneshot::Receiver<()>,
 ) -> Result<()> {
     use self::NesMessage::*;
 
+    let mut nes = Nes::new()?;
     load_signal.await?;
+    let ctx = nes.audio_ctx.clone();
+    let promise = ctx
+        .resume()
+        .map_err(|_| anyhow!("Cannot resume audio context"))?;
+    wasm_bindgen_futures::JsFuture::from(promise)
+        .await
+        .map_err(|_| anyhow!("Cannot resume audio context"))?;
 
     loop {
         if let Ok(Some(msg)) = rx.try_next() {
@@ -57,7 +62,7 @@ async fn nes_thread(
                 _ => {}
             }
         } else {
-            for _ in 0..500 {
+            for _ in 0..300 {
                 nes.clock()?;
             }
         }
@@ -73,15 +78,10 @@ impl Component for CNes {
         let (tx, rx) = mpsc::channel::<NesMessage>(CHANNEL_LEN);
         let (load_signal_tx, load_signal_rx) = oneshot::channel::<()>();
 
-        let nes = Nes::new().unwrap_or_else(|err| {
-            panic!("Could not start NES due to err: {err}");
-        });
-
-        let audio_context = nes.audio_ctx.clone();
-
         spawn_local(async move {
-            if let Err(err) = nes_thread(nes, rx, load_signal_rx).await {
+            if let Err(err) = nes_thread(rx, load_signal_rx).await {
                 log::error!("NES crashed due to err: {}", err);
+                gloo_dialogs::alert("NES crashed :c (Please refresh page)");
             }
         });
 
@@ -89,7 +89,6 @@ impl Component for CNes {
             nes_channel: tx,
             load_signal: Some(load_signal_tx),
             file_reader: None,
-            audio_context,
         }
     }
 
@@ -108,7 +107,6 @@ impl Component for CNes {
                     }
                 });
                 self.file_reader = Some(file_reader);
-                false
             }
             _ => {
                 let mut nes_channel = self.nes_channel.clone();
@@ -119,10 +117,9 @@ impl Component for CNes {
                         log::error!("NES channel communication error: {}", err);
                     }
                 });
-
-                false
             }
         }
+        false
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
@@ -133,31 +130,27 @@ impl Component for CNes {
         let btn_press = |btn| link.callback(move |_| NesMessage::ButtonPress(btn));
         let btn_release = |btn| link.callback(move |_| NesMessage::ButtonRelease(btn));
         // desktop
-        let onkeydown = link.batch_callback(move |e: KeyboardEvent| {
-            match e.key().as_str() {
-                "ArrowUp" => Some(NesMessage::ButtonPress(Button::Up)),
-                "ArrowDown" => Some(NesMessage::ButtonPress(Button::Down)),
-                "ArrowRight" => Some(NesMessage::ButtonPress(Button::Right)),
-                "ArrowLeft" => Some(NesMessage::ButtonPress(Button::Left)),
-                "a" | "A" => Some(NesMessage::ButtonPress(Button::A)),
-                "s" | "S" => Some(NesMessage::ButtonPress(Button::B)),
-                "Shift" => Some(NesMessage::ButtonPress(Button::Select)),
-                "Enter" => Some(NesMessage::ButtonPress(Button::Start)),
-                _ => None
-            }
+        let onkeydown = link.batch_callback(move |e: KeyboardEvent| match e.key().as_str() {
+            "ArrowUp" => Some(NesMessage::ButtonPress(Button::Up)),
+            "ArrowDown" => Some(NesMessage::ButtonPress(Button::Down)),
+            "ArrowRight" => Some(NesMessage::ButtonPress(Button::Right)),
+            "ArrowLeft" => Some(NesMessage::ButtonPress(Button::Left)),
+            "a" | "A" => Some(NesMessage::ButtonPress(Button::A)),
+            "s" | "S" => Some(NesMessage::ButtonPress(Button::B)),
+            "Shift" => Some(NesMessage::ButtonPress(Button::Select)),
+            "Enter" => Some(NesMessage::ButtonPress(Button::Start)),
+            _ => None,
         });
-        let onkeyup = link.batch_callback(move |e: KeyboardEvent| {
-            match e.key().as_str() {
-                "ArrowUp" => Some(NesMessage::ButtonRelease(Button::Up)),
-                "ArrowDown" => Some(NesMessage::ButtonRelease(Button::Down)),
-                "ArrowRight" => Some(NesMessage::ButtonRelease(Button::Right)),
-                "ArrowLeft" => Some(NesMessage::ButtonRelease(Button::Left)),
-                "a" | "A" => Some(NesMessage::ButtonRelease(Button::A)),
-                "s" | "S" => Some(NesMessage::ButtonRelease(Button::B)),
-                "Shift" => Some(NesMessage::ButtonRelease(Button::Select)),
-                "Enter" => Some(NesMessage::ButtonRelease(Button::Start)),
-                _ => None
-            }
+        let onkeyup = link.batch_callback(move |e: KeyboardEvent| match e.key().as_str() {
+            "ArrowUp" => Some(NesMessage::ButtonRelease(Button::Up)),
+            "ArrowDown" => Some(NesMessage::ButtonRelease(Button::Down)),
+            "ArrowRight" => Some(NesMessage::ButtonRelease(Button::Right)),
+            "ArrowLeft" => Some(NesMessage::ButtonRelease(Button::Left)),
+            "a" | "A" => Some(NesMessage::ButtonRelease(Button::A)),
+            "s" | "S" => Some(NesMessage::ButtonRelease(Button::B)),
+            "Shift" => Some(NesMessage::ButtonRelease(Button::Select)),
+            "Enter" => Some(NesMessage::ButtonRelease(Button::Start)),
+            _ => None,
         });
 
         // nes file reader callback
@@ -173,7 +166,6 @@ impl Component for CNes {
                 let file: gloo_file::Blob = file.into();
                 return Some(NesMessage::UtilsLoadingFile(file));
             }
-
             None
         });
 

@@ -23,4 +23,4 @@ gloo-file = "0.2.3"
 
 [dependencies.web-sys]
 version = "0.3.58"
-features = ["CanvasRenderingContext2d", "Document", "Window", "Element", "HtmlCanvasElement", "ImageData", "FileReader", "OscillatorNode", "OscillatorType", "GainNode", "AudioNode", "AudioContext", "AudioDestinationNode", "AudioParam", "PeriodicWaveOptions", "PeriodicWave", "AudioContextState"]
+features = ["CanvasRenderingContext2d", "Document", "Window", "Element", "HtmlCanvasElement", "ImageData", "FileReader", "OscillatorNode", "OscillatorType", "GainNode", "AudioNode", "AudioContext", "AudioDestinationNode", "AudioParam", "PeriodicWaveOptions", "PeriodicWave"]

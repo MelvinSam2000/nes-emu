@@ -96,9 +96,7 @@ and NesAudio according to the target that you are using (web, desktop, mobile, e
 - [x] Do Nothing
 
 ### Web
-- [ ] Fix audiocontext suspend issue on Mobile
-- [x] Make playable on desktop
-- [ ] Canvas requestAnimationFrame
+- [ ] Canvas requestAnimationFrame/fix fps
 - [ ] Potentially webworkers + canvas
 - [ ] Add demo games
 - [ ] Add a menu with previously loaded games
