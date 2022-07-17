@@ -73,6 +73,8 @@ and NesAudio according to the target that you are using (web, desktop, mobile, e
 
 ### NES
 - [ ] Game save functionality (serialize nes state)
+- [ ] No std support? (potential embedded target)
+- [ ] Actor concurrent model
 
 #### PPU
 - [ ] Fix 16x8 sprites inaccurate render
@@ -99,10 +101,12 @@ and NesAudio according to the target that you are using (web, desktop, mobile, e
 - [ ] Make playable on desktop
 - [ ] Canvas requestAnimationFrame
 - [ ] Potentially webworkers + canvas
+- [ ] Add demo games
+- [ ] Add a menu with previously loaded games
 
 ## Contributions
 
-All contributions are welcome. In fact, please help.
+All contributions are welcome.
  
 ## License
 [MIT](https://choosealicense.com/licenses/mit/)
