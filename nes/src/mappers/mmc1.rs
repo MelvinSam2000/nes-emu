@@ -29,16 +29,16 @@ impl RegControl {
 
     pub fn mirroring(&self) -> Mirroring {
         match self.bits & 0b00011 {
-            0 => Mirroring::ONESCREEN_NT0,
-            1 => Mirroring::ONESCREEN_NT1,
-            2 => Mirroring::VERTICAL,
-            3 => Mirroring::HORIZONTAL,
-            _ => panic!("Mirroring not available for MMC1 yet..."),
+            0 => Mirroring::OneScreenNT0,
+            1 => Mirroring::OneScreenNT1,
+            2 => Mirroring::Vertical,
+            3 => Mirroring::Horizontal,
+            _ => unreachable!(),
         }
     }
 
     pub fn prg_bank_mode(&self) -> u8 {
-        (self.bits & 0b01100) >> 2
+        (self.bits >> 2) & 0b11
     }
 
     pub fn chr_bank_mode(&self) -> bool {

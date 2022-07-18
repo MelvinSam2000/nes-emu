@@ -69,20 +69,20 @@ pub fn write<S, A>(nes: &mut Nes<S, A>, addr: u16, data: u8) -> Result<()> {
 pub fn mirror_vram_addr<S, A>(nes: &mut Nes<S, A>, addr: u16) -> u16 {
     let mut mapped_addr = addr & 0x0fff;
     match &nes.cartridge.mirroring {
-        Mirroring::HORIZONTAL => {
+        Mirroring::Horizontal => {
             if (0x0400..0x0800).contains(&mapped_addr) || mapped_addr >= 0x0c00 {
                 mapped_addr -= 0x0400;
             }
         }
-        Mirroring::VERTICAL => {
+        Mirroring::Vertical => {
             if (0x0800..0x0c00).contains(&mapped_addr) || mapped_addr >= 0x0c00 {
                 mapped_addr -= 0x0800;
             }
         }
-        Mirroring::ONESCREEN_NT0 => {
+        Mirroring::OneScreenNT0 => {
             mapped_addr &= 0x3ff;
         }
-        Mirroring::ONESCREEN_NT1 => {
+        Mirroring::OneScreenNT1 => {
             mapped_addr &= 0x3ff;
             mapped_addr += 0x400;
         }

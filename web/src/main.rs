@@ -157,14 +157,22 @@ impl Component for CNes {
         let load_rom = link.batch_callback(move |e: Event| {
             let input: HtmlInputElement = e.target_unchecked_into();
             if let Some(files) = input.files() {
-                let mut files = js_sys::try_iter(&files)
-                    .unwrap()
-                    .unwrap()
-                    .map(|v| File::from(v.unwrap()))
-                    .map(File::from);
-                let file: gloo_file::File = files.next().unwrap().into();
-                let file: gloo_file::Blob = file.into();
-                return Some(NesMessage::UtilsLoadingFile(file));
+                let file_read_dispatch = || -> Option<NesMessage> {
+                    let mut files = js_sys::try_iter(&files)
+                        .ok()??
+                        .filter_map(|v| v.ok())
+                        .map(File::from);
+                    let file: gloo_file::File = files.next()?.into();
+                    let file: gloo_file::Blob = file.into();
+                    Some(NesMessage::UtilsLoadingFile(file))
+                };
+                let res = file_read_dispatch();
+                return if res.is_none() {
+                    gloo_dialogs::alert("Could not open ROM file. Try again.");
+                    None
+                } else {
+                    res
+                };
             }
             None
         });

@@ -23,13 +23,12 @@ pub struct Cartridge<S, A> {
     pub mirroring: Mirroring,
 }
 
-#[allow(non_camel_case_types)]
 #[derive(Debug)]
 pub enum Mirroring {
-    HORIZONTAL,
-    VERTICAL,
-    ONESCREEN_NT0,
-    ONESCREEN_NT1,
+    Horizontal,
+    Vertical,
+    OneScreenNT0,
+    OneScreenNT1,
 }
 
 impl<S, A> Default for Cartridge<S, A> {
@@ -40,7 +39,7 @@ impl<S, A> Default for Cartridge<S, A> {
             prg_banks: 0,
             chr_banks: 0,
             mapper: Rc::new(RefCell::new(Nrom)),
-            mirroring: Mirroring::HORIZONTAL,
+            mirroring: Mirroring::Horizontal,
         }
     }
 }
@@ -69,9 +68,9 @@ pub fn load_cartridge<S, A>(nes: &mut Nes<S, A>, rom_bytes: &[u8]) -> Result<()>
     let mut chr_size = 0x2000 * chr_banks as usize;
 
     nes.cartridge.mirroring = if !mirroring {
-        Mirroring::HORIZONTAL
+        Mirroring::Horizontal
     } else {
-        Mirroring::VERTICAL
+        Mirroring::Vertical
     };
     log::info!("Mirroring: {:?}", nes.cartridge.mirroring);
 
@@ -141,6 +140,6 @@ pub fn chr_read<S, A>(nes: &mut Nes<S, A>, addr: u16) -> Result<u8> {
 
 pub fn chr_write<S, A>(nes: &mut Nes<S, A>, addr: u16, data: u8) -> Result<()> {
     let mapper = nes.cartridge.mapper.clone();
-    let mut mapper_ref = mapper.borrow_mut();
+    let mut mapper_ref = mapper.try_borrow_mut()?;
     mapper_ref.write_chr(nes, addr, data)
 }

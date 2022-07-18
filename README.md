@@ -1,14 +1,19 @@
 # NES Emulator
 
-NES Emulator written in Rust for fun/learning purposes. This project is not done and
-I will be coming back in the future to continue it :). However it can run few games almost perfectly already. This project was started more than a year ago (with only one month of actual work) and this repo is like a "fork" 
-where I rewrote/recopied it with better Rust knowledge.
+NES Emulator written in Rust and Yew/WASM. Live demo [here](https://paltamaster.ddns.net/nes).
+<p align="center">
+    <img src="assets/web-smb.jpg" height="500" />
+</p>
+
+## Description
+
+NES Emulator written in Rust for fun/learning purposes. This project is not done and I will be coming back in the future to continue it :). However it can run few games almost perfectly already.
 
 ## Emulation information
 
 - CPU fully emulated and passes Blarggs NES test. No plans on changing CPU.
-- PPU/GPU semi-functional but requires debugging. More info on TODO section.
-- Audio Unit also functional but incomplete. More info on TODO section.
+- PPU/GPU semi-functional but requires improvements. More info on TODO section.
+- Audio Unit also functional but is incomplete. More info on TODO section.
 - Mappers 0-3 "implemented". (NROM, MMC1, UxROM, CnROM). More info on TODO section.
 
 ## Targets
@@ -72,8 +77,8 @@ and NesAudio according to the target that you are using (web, desktop, mobile, e
 
 ### NES
 - [ ] Game save functionality (serialize nes state)
-- [ ] No std support? (potential embedded target)
-- [ ] Actor concurrent model
+- [ ] (Experimental) No-std support? (potential embedded target)
+- [ ] (Experimental) Actor concurrent model
 
 #### PPU
 - [ ] Fix 16x8 sprites inaccurate render

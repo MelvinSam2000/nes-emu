@@ -162,7 +162,7 @@ where
         nes.ppu.reg_status.set_sprite_0_hit(false);
         //let (back, front) = split_sprites_back_and_front(nes);
         render_background(nes)?;
-        render_sprites(nes, &(0..255).step_by(4).rev().collect::<Vec<u8>>())?;
+        render_sprites(nes)?;
         //render_sprites(nes, &front)?;
         nes.screen.vblank()?;
         if nes.ppu.reg_control.is_nmi_enabled() {
@@ -308,14 +308,14 @@ where
         &nes.cartridge.mirroring,
         nes.ppu.reg_control.nametable_offset(),
     ) {
-        (Mirroring::VERTICAL, 0x000)
-        | (Mirroring::VERTICAL, 0x800)
-        | (Mirroring::HORIZONTAL, 0x000)
-        | (Mirroring::HORIZONTAL, 0x400) => (0x2000, 0x2400),
-        (Mirroring::VERTICAL, 0x400)
-        | (Mirroring::VERTICAL, 0xc00)
-        | (Mirroring::HORIZONTAL, 0x800)
-        | (Mirroring::HORIZONTAL, 0xc00) => (0x2400, 0x2000),
+        (Mirroring::Vertical, 0x000)
+        | (Mirroring::Vertical, 0x800)
+        | (Mirroring::Horizontal, 0x000)
+        | (Mirroring::Horizontal, 0x400) => (0x2000, 0x2400),
+        (Mirroring::Vertical, 0x400)
+        | (Mirroring::Vertical, 0xc00)
+        | (Mirroring::Horizontal, 0x800)
+        | (Mirroring::Horizontal, 0xc00) => (0x2400, 0x2000),
         _ => Err(anyhow!(
             "Unsupported Mirroring type: {:?}",
             &nes.cartridge.mirroring
@@ -370,13 +370,12 @@ where
     (back, front)
 }
 
-pub fn render_sprites<S, A>(nes: &mut Nes<S, A>, sprites: &[u8]) -> Result<()>
+pub fn render_sprites<S, A>(nes: &mut Nes<S, A>) -> Result<()>
 where
     S: NesScreen,
     A: NesAudio,
 {
-    for i in sprites {
-        let i = *i as usize;
+    for i in (0..=255).step_by(4) {
         let tile_id = nes.ppu.oam[i + 1];
         let tile_x = nes.ppu.oam[i + 3];
         let tile_y = nes.ppu.oam[i];

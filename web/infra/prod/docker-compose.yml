@@ -9,3 +9,7 @@ services:
       dockerfile: Dockerfile
     ports:
       - 8002:8000
+    networks:
+      - nes-emu
+networks:
+  nes-emu:
