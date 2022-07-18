@@ -1,6 +1,6 @@
 # NES Emulator
 
-NES Emulator written in Rust and Yew/WASM. Live demo [here](https://paltamaster.ddns.net/nes).
+NES Emulator written in Rust and Yew/WASM. Live demo [here](https://paltamaster.ddns.net/nes). (Recommended to try on mobile browser)
 <p align="center">
     <img src="assets/web-smb.jpg" height="500" />
 </p>
