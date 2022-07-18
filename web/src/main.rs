@@ -11,7 +11,6 @@ use gloo_file::callbacks::FileReader;
 use gloo_file::Blob;
 use wasm_bindgen_futures::spawn_local;
 use wasm_logger::Config;
-use web_sys::File;
 use web_sys::HtmlInputElement;
 use yew::prelude::*;
 
@@ -93,17 +92,23 @@ impl Component for CNes {
     }
 
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
-        //use self::NesMessage::*;
 
         match msg {
             NesMessage::UtilsLoadingFile(file) => {
                 let load_signal = self.load_signal.take();
                 let link = ctx.link().clone();
                 let file_reader = gloo_file::callbacks::read_as_bytes(&file, move |res| {
-                    let rom_bytes: Vec<u8> = res.unwrap();
-                    link.send_message(NesMessage::Load(rom_bytes));
-                    if let Some(load_signal) = load_signal {
-                        load_signal.send(()).unwrap();
+                    let wrapper = || {
+                        let rom_bytes: Vec<u8> = res.ok()?;
+                        link.send_message(NesMessage::Load(rom_bytes));
+                        let _ = load_signal.map(|load_signal| {
+                            load_signal.send(()).ok()
+                        });
+                        Some(())
+                    };
+                    if let None = wrapper() {
+                        log::error!("Failed to load ROM file");
+                        gloo_dialogs::alert("Failed to load ROM file");
                     }
                 });
                 self.file_reader = Some(file_reader);
@@ -156,25 +161,8 @@ impl Component for CNes {
         // nes file reader callback
         let load_rom = link.batch_callback(move |e: Event| {
             let input: HtmlInputElement = e.target_unchecked_into();
-            if let Some(files) = input.files() {
-                let file_read_dispatch = || -> Option<NesMessage> {
-                    let mut files = js_sys::try_iter(&files)
-                        .ok()??
-                        .filter_map(|v| v.ok())
-                        .map(File::from);
-                    let file: gloo_file::File = files.next()?.into();
-                    let file: gloo_file::Blob = file.into();
-                    Some(NesMessage::UtilsLoadingFile(file))
-                };
-                let res = file_read_dispatch();
-                return if res.is_none() {
-                    gloo_dialogs::alert("Could not open ROM file. Try again.");
-                    None
-                } else {
-                    res
-                };
-            }
-            None
+            let file = input.files()?.get(0)?;
+            Some(NesMessage::UtilsLoadingFile(file.into()))
         });
 
         html! {
