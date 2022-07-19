@@ -155,17 +155,14 @@ impl ::nes::nesaudio::NesAudio for NesAudio {
 fn set_duty_cycle(cx: &AudioContext, pulse: &OscillatorNode, dc: f32) -> Result<()> {
     const SAMPLES: usize = 32;
     let mut real = vec![0f32; SAMPLES];
-    let imag = (0..SAMPLES)
-        .into_iter()
-        .map(|_| JsValue::from_f64(0.))
-        .collect::<js_sys::Array>();
     real[0] = dc;
-    for (i, real_i) in real.iter_mut().enumerate() {
+    real.iter_mut().enumerate().for_each(|(i, real_i)| {
         let npi = (i as f32) * PI;
         *real_i = (4. / npi) * (((npi * dc) as f32).sin());
-    }
+    });
+
     let mut options = PeriodicWaveOptions::new();
-    options.disable_normalization(false).imag(&imag);
+    options.disable_normalization(false);
     let real = JsValue::from(
         &real
             .into_iter()

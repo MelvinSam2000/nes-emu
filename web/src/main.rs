@@ -58,10 +58,10 @@ async fn nes_thread(
                 Reset => nes.reset()?,
                 ButtonPress(btn) => nes.press_btn(btn)?,
                 ButtonRelease(btn) => nes.release_btn(btn)?,
-                _ => {}
+                _ => unreachable!()
             }
         } else {
-            for _ in 0..300 {
+            for _ in 0..400 {
                 nes.clock()?;
             }
         }
