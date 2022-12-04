@@ -9,19 +9,19 @@ lto = true
 codegen-units = 1
 
 [dependencies]
-anyhow = "1.0.58"
+anyhow = "1.0.66"
 log = { version = "0.4.17", features = ["release_max_level_info"] }
 nes = { path = "../nes" }
-wasm-bindgen = "0.2.81"
+wasm-bindgen = "0.2.83"
 wasm-logger = "0.2.0"
 fluvio-wasm-timer = "0.2.5"
-yew = "0.19.3"
-wasm-bindgen-futures = "0.4.31"
-futures = "0.3.21"
-js-sys = "0.3.58"
+yew = { version = "0.20.0", features = ["csr"] }
+wasm-bindgen-futures = "0.4.33"
+futures = "0.3.25"
+js-sys = "0.3.60"
 gloo-file = "0.2.3"
 gloo-dialogs = "0.1.1"
 
 [dependencies.web-sys]
-version = "0.3.58"
+version = "0.3.60"
 features = ["CanvasRenderingContext2d", "Document", "Window", "Element", "HtmlCanvasElement", "ImageData", "FileReader", "OscillatorNode", "OscillatorType", "GainNode", "AudioNode", "AudioContext", "AudioDestinationNode", "AudioParam", "PeriodicWaveOptions", "PeriodicWave", "AudioContextState"]

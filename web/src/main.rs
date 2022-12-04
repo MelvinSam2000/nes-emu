@@ -58,7 +58,7 @@ async fn nes_thread(
                 Reset => nes.reset()?,
                 ButtonPress(btn) => nes.press_btn(btn)?,
                 ButtonRelease(btn) => nes.release_btn(btn)?,
-                _ => unreachable!()
+                _ => unreachable!(),
             }
         } else {
             for _ in 0..400 {
@@ -92,7 +92,6 @@ impl Component for CNes {
     }
 
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
-
         match msg {
             NesMessage::UtilsLoadingFile(file) => {
                 let load_signal = self.load_signal.take();
@@ -101,9 +100,7 @@ impl Component for CNes {
                     let wrapper = || {
                         let rom_bytes: Vec<u8> = res.ok()?;
                         link.send_message(NesMessage::Load(rom_bytes));
-                        let _ = load_signal.map(|load_signal| {
-                            load_signal.send(()).ok()
-                        });
+                        let _ = load_signal.map(|load_signal| load_signal.send(()).ok());
                         Some(())
                     };
                     if let None = wrapper() {
@@ -234,7 +231,7 @@ impl Component for CNes {
 pub fn main() {
     wasm_logger::init(Config::new(log::Level::Debug));
     log::debug!("Debug Logging enabled");
-    yew::start_app::<CNes>();
+    yew::Renderer::<CNes>::new().render();
 }
 
 pub mod nes;

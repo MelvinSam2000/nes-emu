@@ -6,7 +6,7 @@ services:
     restart: always
     build:
       context: ../../../
-      dockerfile: Dockerfile
+      dockerfile: web/Dockerfile
     ports:
       - 8002:8000
     networks:
